@@ -1,0 +1,183 @@
+import { useEffect, useState } from 'react';
+import { useAppSelector } from '@/hooks/useRedux';
+import api from '@/services/api';
+import LoadingSpinner from '@/components/common/LoadingSpinner';
+import { Link, Navigate } from 'react-router-dom';
+import clsx from 'clsx';
+
+interface PortfolioSummary {
+  cash: number;
+  totalValue: number;
+  totalProfitLoss: number;
+  totalProfitLossPercent: number;
+  dailyChange: number;
+  dailyChangePercent: number;
+}
+
+interface TopStock {
+  symbol: string;
+  name: string;
+  price: number;
+  change: number;
+  changePercent: number;
+}
+
+export default function DashboardPage() {
+  const { user } = useAppSelector((state) => state.auth);
+  const [portfolio, setPortfolio] = useState<PortfolioSummary | null>(null);
+  const [topStocks, setTopStocks] = useState<TopStock[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Redirect admin users to admin page
+  if (user?.role === 'ADMIN') {
+    return <Navigate to="/admin" replace />;
+  }
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [portfolioRes, stocksRes] = await Promise.all([
+          api.getPortfolio(),
+          api.getStocks(),
+        ]);
+
+        setPortfolio(portfolioRes.data);
+        setTopStocks(stocksRes.data.slice(0, 5));
+      } catch (error) {
+        console.error('Failed to fetch dashboard data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  if (isLoading) {
+    return <LoadingSpinner size="lg" className="h-64" />;
+  }
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('ko-KR', {
+      style: 'currency',
+      currency: 'KRW',
+      minimumFractionDigits: 0,
+    }).format(value);
+  };
+
+  const formatPercent = (value: number) => {
+    const sign = value >= 0 ? '+' : '';
+    return `${sign}${value.toFixed(2)}%`;
+  };
+
+  return (
+    <div>
+      <h1 className="text-2xl font-bold text-gray-900 mb-6">
+        안녕하세요, {user?.name}님!
+      </h1>
+
+      {/* Portfolio Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="bg-white p-6 rounded-lg shadow">
+          <p className="text-sm font-medium text-gray-500 mb-1">총 자산</p>
+          <p className="text-2xl font-bold text-gray-900">
+            {portfolio ? formatCurrency(portfolio.totalValue) : '₩0'}
+          </p>
+        </div>
+
+        <div className="bg-white p-6 rounded-lg shadow">
+          <p className="text-sm font-medium text-gray-500 mb-1">보유 현금</p>
+          <p className="text-2xl font-bold text-gray-900">
+            {portfolio ? formatCurrency(portfolio.cash) : '₩0'}
+          </p>
+        </div>
+
+        <div className="bg-white p-6 rounded-lg shadow">
+          <p className="text-sm font-medium text-gray-500 mb-1">총 수익률</p>
+          <p
+            className={clsx('text-2xl font-bold', {
+              'text-success-600': portfolio && portfolio.totalProfitLossPercent >= 0,
+              'text-danger-600': portfolio && portfolio.totalProfitLossPercent < 0,
+            })}
+          >
+            {portfolio ? formatPercent(portfolio.totalProfitLossPercent) : '+0.00%'}
+          </p>
+        </div>
+
+        <div className="bg-white p-6 rounded-lg shadow">
+          <p className="text-sm font-medium text-gray-500 mb-1">일일 변동</p>
+          <p
+            className={clsx('text-2xl font-bold', {
+              'text-success-600': portfolio && portfolio.dailyChangePercent >= 0,
+              'text-danger-600': portfolio && portfolio.dailyChangePercent < 0,
+            })}
+          >
+            {portfolio ? formatPercent(portfolio.dailyChangePercent) : '+0.00%'}
+          </p>
+        </div>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">빠른 실행</h2>
+          <div className="grid grid-cols-2 gap-4">
+            <Link
+              to="/trading"
+              className="btn btn-primary text-center"
+            >
+              주식 거래하기
+            </Link>
+            <Link
+              to="/portfolio"
+              className="btn btn-outline text-center"
+            >
+              포트폴리오 보기
+            </Link>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">인기 종목</h2>
+          <div className="space-y-2">
+            {topStocks.map((stock) => (
+              <Link
+                key={stock.symbol}
+                to={`/trading?symbol=${stock.symbol}`}
+                className="flex items-center justify-between p-2 hover:bg-gray-50 rounded"
+              >
+                <div>
+                  <p className="font-medium text-gray-900">{stock.name}</p>
+                  <p className="text-sm text-gray-500">{stock.symbol}</p>
+                </div>
+                <div className="text-right">
+                  <p className="font-medium text-gray-900">
+                    {formatCurrency(stock.price)}
+                  </p>
+                  <p
+                    className={clsx('text-sm', {
+                      'text-success-600': stock.changePercent >= 0,
+                      'text-danger-600': stock.changePercent < 0,
+                    })}
+                  >
+                    {formatPercent(stock.changePercent)}
+                  </p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Tips Section */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+        <h3 className="text-lg font-semibold text-blue-900 mb-2">오늘의 팁</h3>
+        <p className="text-blue-700">
+          경제 지표와 수학적 분석을 활용하여 투자 결정을 내리세요. 
+          P/E 비율, 이동평균선, 볼린저 밴드 등의 지표를 참고하면 
+          더 나은 투자 결정을 내릴 수 있습니다.
+        </p>
+      </div>
+    </div>
+  );
+}

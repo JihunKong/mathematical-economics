@@ -1,0 +1,9 @@
+requests==2.31.0
+beautifulsoup4==4.12.2
+lxml==4.9.3
+aiohttp==3.9.1
+aiohttp-socks==0.8.4
+fake-useragent==1.4.0
+cloudscraper==1.2.71
+certifi>=2025.4.26
+backoff==2.2.1

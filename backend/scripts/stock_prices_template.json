@@ -1,0 +1,162 @@
+{
+  "005930": {
+    "currentPrice": 61200,
+    "previousClose": 61500,
+    "dayOpen": 61500,
+    "dayHigh": 61800,
+    "dayLow": 61000,
+    "volume": 7523891
+  },
+  "000660": {
+    "currentPrice": 201500,
+    "previousClose": 199800,
+    "dayOpen": 199800,
+    "dayHigh": 202000,
+    "dayLow": 199500,
+    "volume": 3456789
+  },
+  "035420": {
+    "currentPrice": 185300,
+    "previousClose": 184200,
+    "dayOpen": 184200,
+    "dayHigh": 186000,
+    "dayLow": 184000,
+    "volume": 4123567
+  },
+  "035720": {
+    "currentPrice": 58700,
+    "previousClose": 57900,
+    "dayOpen": 57900,
+    "dayHigh": 59000,
+    "dayLow": 57800,
+    "volume": 3987654
+  },
+  "005380": {
+    "currentPrice": 241000,
+    "previousClose": 239500,
+    "dayOpen": 239500,
+    "dayHigh": 241500,
+    "dayLow": 239000,
+    "volume": 1234567
+  },
+  "051910": {
+    "currentPrice": 487500,
+    "previousClose": 490000,
+    "dayOpen": 490000,
+    "dayHigh": 492000,
+    "dayLow": 487000,
+    "volume": 876543
+  },
+  "006400": {
+    "currentPrice": 423000,
+    "previousClose": 425500,
+    "dayOpen": 425500,
+    "dayHigh": 427000,
+    "dayLow": 422500,
+    "volume": 567890
+  },
+  "068270": {
+    "currentPrice": 178900,
+    "previousClose": 177500,
+    "dayOpen": 177500,
+    "dayHigh": 179500,
+    "dayLow": 177000,
+    "volume": 2345678
+  },
+  "105560": {
+    "currentPrice": 67800,
+    "previousClose": 67200,
+    "dayOpen": 67200,
+    "dayHigh": 68000,
+    "dayLow": 67000,
+    "volume": 1876543
+  },
+  "055550": {
+    "currentPrice": 45600,
+    "previousClose": 45200,
+    "dayOpen": 45200,
+    "dayHigh": 45800,
+    "dayLow": 45100,
+    "volume": 2987654
+  },
+  "034730": {
+    "currentPrice": 156700,
+    "previousClose": 158200,
+    "dayOpen": 158200,
+    "dayHigh": 158500,
+    "dayLow": 156500,
+    "volume": 765432
+  },
+  "015760": {
+    "currentPrice": 23450,
+    "previousClose": 23800,
+    "dayOpen": 23800,
+    "dayHigh": 23900,
+    "dayLow": 23400,
+    "volume": 4567890
+  },
+  "032830": {
+    "currentPrice": 89300,
+    "previousClose": 88700,
+    "dayOpen": 88700,
+    "dayHigh": 89500,
+    "dayLow": 88500,
+    "volume": 654321
+  },
+  "003550": {
+    "currentPrice": 82400,
+    "previousClose": 82100,
+    "dayOpen": 82100,
+    "dayHigh": 82600,
+    "dayLow": 82000,
+    "volume": 543210
+  },
+  "017670": {
+    "currentPrice": 53200,
+    "previousClose": 53500,
+    "dayOpen": 53500,
+    "dayHigh": 53700,
+    "dayLow": 53100,
+    "volume": 987654
+  },
+  "030200": {
+    "currentPrice": 38750,
+    "previousClose": 38500,
+    "dayOpen": 38500,
+    "dayHigh": 38900,
+    "dayLow": 38400,
+    "volume": 1234567
+  },
+  "066570": {
+    "currentPrice": 94800,
+    "previousClose": 95200,
+    "dayOpen": 95200,
+    "dayHigh": 95500,
+    "dayLow": 94700,
+    "volume": 876543
+  },
+  "096770": {
+    "currentPrice": 128900,
+    "previousClose": 127500,
+    "dayOpen": 127500,
+    "dayHigh": 129500,
+    "dayLow": 127300,
+    "volume": 765432
+  },
+  "011200": {
+    "currentPrice": 21850,
+    "previousClose": 22100,
+    "dayOpen": 22100,
+    "dayHigh": 22200,
+    "dayLow": 21800,
+    "volume": 3456789
+  },
+  "033780": {
+    "currentPrice": 101500,
+    "previousClose": 101000,
+    "dayOpen": 101000,
+    "dayHigh": 102000,
+    "dayLow": 100800,
+    "volume": 567890
+  }
+}

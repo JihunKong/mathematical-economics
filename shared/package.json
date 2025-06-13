@@ -1,0 +1,13 @@
+{
+  "name": "economic-math-stock-shared",
+  "version": "1.0.0",
+  "description": "Shared types and utilities for Economic Mathematics Stock Trading App",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+}

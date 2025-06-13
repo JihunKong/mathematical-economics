@@ -1,0 +1,265 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String         @id @default(cuid())
+  email            String         @unique
+  password         String
+  name             String
+  role             UserRole       @default(GUEST)
+  isActive         Boolean        @default(true)
+  initialCapital   Float          @default(1000000) // Starting with 1 million won
+  currentCash      Float          @default(1000000)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  // Relations
+  classId          String?
+  class            Class?         @relation(fields: [classId], references: [id])
+  portfolios       Portfolio[]
+  transactions     Transaction[]
+  holdings         Holding[]
+  notifications    Notification[]
+  
+  @@index([email])
+  @@index([classId])
+}
+
+model Class {
+  id               String         @id @default(cuid())
+  name             String
+  code             String         @unique
+  teacherId        String
+  startDate        DateTime
+  endDate          DateTime?
+  isActive         Boolean        @default(true)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  // Relations
+  students         User[]
+  allowedStocks    AllowedStock[]
+  
+  @@index([code])
+  @@index([teacherId])
+}
+
+model Stock {
+  id               String         @id @default(cuid())
+  symbol           String         @unique
+  name             String
+  market           String         // KOSPI, KOSDAQ
+  sector           String?
+  currentPrice     Float
+  previousClose    Float
+  dayOpen          Float?
+  dayHigh          Float?
+  dayLow           Float?
+  volume           BigInt?
+  marketCap        BigInt?
+  per              Float?         // Price-to-Earnings Ratio
+  eps              Float?         // Earnings Per Share
+  isActive         Boolean        @default(true)  // Whether stock is available for trading
+  isTracked        Boolean        @default(false) // Whether to track price history
+  updatedAt        DateTime       @updatedAt
+
+  // Relations
+  transactions     Transaction[]
+  holdings         Holding[]
+  priceHistory     PriceHistory[]
+  stockPriceHistory StockPriceHistory[]
+  allowedStocks    AllowedStock[]
+  
+  @@index([symbol])
+  @@index([isTracked])
+}
+
+model Portfolio {
+  id               String         @id @default(cuid())
+  userId           String
+  totalValue       Float
+  totalCost        Float
+  totalProfitLoss  Float
+  totalProfitLossPercent Float
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  // Relations
+  user             User           @relation(fields: [userId], references: [id])
+  
+  @@index([userId])
+}
+
+model Transaction {
+  id               String         @id @default(cuid())
+  userId           String
+  stockId          String
+  type             TransactionType
+  quantity         Int
+  price            Float
+  totalAmount      Float
+  commission       Float          @default(0)
+  reason           String?        // Mathematical/Economic reasoning
+  createdAt        DateTime       @default(now())
+
+  // Relations
+  user             User           @relation(fields: [userId], references: [id])
+  stock            Stock          @relation(fields: [stockId], references: [id])
+  
+  @@index([userId])
+  @@index([stockId])
+  @@index([createdAt])
+}
+
+model Holding {
+  id               String         @id @default(cuid())
+  userId           String
+  stockId          String
+  quantity         Int
+  averagePrice     Float
+  totalCost        Float
+  currentValue     Float
+  profitLoss       Float
+  profitLossPercent Float
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  // Relations
+  user             User           @relation(fields: [userId], references: [id])
+  stock            Stock          @relation(fields: [stockId], references: [id])
+  
+  @@unique([userId, stockId])
+  @@index([userId])
+  @@index([stockId])
+}
+
+model PriceHistory {
+  id               String         @id @default(cuid())
+  stockId          String
+  date             DateTime
+  open             Float
+  high             Float
+  low              Float
+  close            Float
+  volume           BigInt
+  createdAt        DateTime       @default(now())
+
+  // Relations
+  stock            Stock          @relation(fields: [stockId], references: [id])
+  
+  @@unique([stockId, date])
+  @@index([stockId])
+  @@index([date])
+}
+
+// Minute-level stock price history for tracked stocks
+model StockPriceHistory {
+  id               String         @id @default(cuid())
+  stockId          String
+  symbol           String
+  currentPrice     Float
+  previousClose    Float
+  dayOpen          Float
+  dayHigh          Float
+  dayLow           Float
+  volume           BigInt         @default(0)
+  change           Float          @default(0)
+  changePercent    Float          @default(0)
+  timestamp        DateTime       @default(now())
+  source           String         @default("mock") // mock, kis, alphaVantage, naver, etc.
+  createdAt        DateTime       @default(now())
+
+  // Relations
+  stock            Stock          @relation(fields: [stockId], references: [id], onDelete: Cascade)
+  
+  @@index([symbol, timestamp(sort: Desc)])
+  @@index([stockId])
+  @@index([timestamp])
+}
+
+model Leaderboard {
+  id               String         @id @default(cuid())
+  userId           String
+  classId          String?
+  totalReturn      Float
+  totalReturnPercent Float
+  winRate          Float
+  totalTrades      Int
+  rank             Int
+  period           LeaderboardPeriod
+  updatedAt        DateTime       @default(now())
+
+  @@unique([userId, classId, period])
+  @@index([classId, period])
+  @@index([rank])
+}
+
+model Notification {
+  id               String         @id @default(cuid())
+  userId           String
+  type             NotificationType
+  title            String
+  message          String
+  isRead           Boolean        @default(false)
+  createdAt        DateTime       @default(now())
+
+  // Relations
+  user             User           @relation(fields: [userId], references: [id])
+  
+  @@index([userId, isRead])
+  @@index([createdAt])
+}
+
+// Allowed stocks per class - teacher can control which stocks are available
+model AllowedStock {
+  id               String         @id @default(cuid())
+  classId          String
+  stockId          String
+  isActive         Boolean        @default(true)
+  addedBy          String         // Teacher who added this stock
+  createdAt        DateTime       @default(now())
+  
+  // Relations
+  class            Class          @relation(fields: [classId], references: [id])
+  stock            Stock          @relation(fields: [stockId], references: [id])
+  
+  @@unique([classId, stockId])
+  @@index([classId])
+  @@index([stockId])
+}
+
+// Enums
+enum UserRole {
+  GUEST
+  STUDENT
+  TEACHER
+  ADMIN
+}
+
+enum TransactionType {
+  BUY
+  SELL
+}
+
+enum LeaderboardPeriod {
+  DAILY
+  WEEKLY
+  MONTHLY
+  ALL_TIME
+}
+
+enum NotificationType {
+  TRADE_EXECUTED
+  PRICE_ALERT
+  SYSTEM
+  ACHIEVEMENT
+}

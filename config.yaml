@@ -1,0 +1,327 @@
+# 경제수학 모의주식 투자 앱 설정 파일
+# Economic Math Stock Trading App Configuration
+
+# 📋 프로젝트 기본 정보
+project:
+  name: "economic-math-stock-app"
+  version: "1.0.0"
+  description: "한국투자증권 API를 활용한 고등학교 경제수학 교육용 모의주식 투자 플랫폼"
+  author: "고등학교 국어 교사 겸 프로그래머"
+  license: "Educational Use Only"
+  repository: "https://github.com/your-username/economic-math-stock-app"
+
+# 🛠️ 개발 환경 설정
+development:
+  # Node.js 버전
+  node_version: "18.17.0"
+  
+  # 패키지 매니저
+  package_manager: "npm"
+  
+  # 개발 서버 포트
+  ports:
+    frontend: 3000
+    backend: 8000
+    redis: 6379
+    postgres: 5432
+  
+  # 개발 도구
+  tools:
+    linter: "eslint"
+    formatter: "prettier"
+    bundler: "vite"
+    testing: "jest"
+    e2e_testing: "playwright"
+
+# 🎯 애플리케이션 기능 설정
+application:
+  # 투자 관련 설정
+  trading:
+    initial_balance: 100000000  # 초기 투자 금액 (1억원)
+    daily_trade_limit: 1        # 일일 거래 제한 (종목별 1회)
+    trade_fee_rate: 0.00015     # 거래 수수료 (0.015%)
+    market_hours:
+      start: "09:00"
+      end: "15:30"
+      timezone: "Asia/Seoul"
+  
+  # 학습 관리 설정
+  education:
+    required_trade_reason: true   # 거래 근거 입력 필수
+    min_reason_length: 50        # 최소 근거 글자 수
+    max_reason_length: 500       # 최대 근거 글자 수
+    grade_levels: [10, 11, 12]   # 대상 학년
+  
+  # 리더보드 설정
+  leaderboard:
+    update_interval: "1h"        # 업데이트 주기
+    display_count: 50           # 표시할 순위 수
+    reset_period: "semester"    # 리셋 주기 (학기별)
+
+# 🔧 기술 스택 설정
+tech_stack:
+  # 프론트엔드
+  frontend:
+    framework: "React"
+    version: "18.2.0"
+    language: "TypeScript"
+    styling: "Tailwind CSS"
+    state_management: "Redux Toolkit"
+    routing: "React Router"
+    charts: "Chart.js"
+    http_client: "Axios"
+    websocket: "Socket.io-client"
+    build_tool: "Vite"
+    
+  # 백엔드
+  backend:
+    runtime: "Node.js"
+    framework: "Express.js"
+    language: "TypeScript"
+    orm: "Prisma"
+    authentication: "JWT"
+    websocket: "Socket.io"
+    validation: "Joi"
+    documentation: "Swagger"
+    
+  # 데이터베이스
+  database:
+    primary: "PostgreSQL"
+    version: "15.3"
+    cache: "Redis"
+    cache_version: "7.0"
+    
+  # 외부 API
+  external_apis:
+    stock_data: "한국투자증권 Open API"
+    news: "네이버 뉴스 API"
+    
+  # DevOps
+  devops:
+    containerization: "Docker"
+    reverse_proxy: "Nginx"
+    monitoring: "PM2"
+    logging: "Winston"
+
+# 🌐 환경 설정
+environments:
+  # 개발 환경
+  development:
+    api_base_url: "http://localhost:8000"
+    frontend_url: "http://localhost:3000"
+    database_url: "postgresql://user:password@localhost:5432/stock_app_dev"
+    redis_url: "redis://localhost:6379"
+    log_level: "debug"
+    cors_origin: ["http://localhost:3000"]
+    
+  # 스테이징 환경
+  staging:
+    api_base_url: "https://staging-api.economic-stock.edu"
+    frontend_url: "https://staging.economic-stock.edu"
+    database_url: "${STAGING_DATABASE_URL}"
+    redis_url: "${STAGING_REDIS_URL}"
+    log_level: "info"
+    cors_origin: ["https://staging.economic-stock.edu"]
+    
+  # 프로덕션 환경
+  production:
+    api_base_url: "https://api.economic-stock.edu"
+    frontend_url: "https://economic-stock.edu"
+    database_url: "${PRODUCTION_DATABASE_URL}"
+    redis_url: "${PRODUCTION_REDIS_URL}"
+    log_level: "warn"
+    cors_origin: ["https://economic-stock.edu"]
+
+# 🔐 보안 설정
+security:
+  # JWT 설정
+  jwt:
+    expires_in: "24h"
+    refresh_expires_in: "7d"
+    algorithm: "HS256"
+    
+  # API 제한
+  rate_limiting:
+    window_ms: 900000     # 15분
+    max_requests: 100     # 최대 요청 수
+    
+  # 패스워드 정책
+  password:
+    min_length: 8
+    require_uppercase: true
+    require_lowercase: true
+    require_numbers: true
+    require_symbols: false
+    
+  # 세션 설정
+  session:
+    cookie_max_age: 86400000  # 24시간
+    secure: true              # HTTPS 필수
+    same_site: "strict"
+
+# 📊 데이터베이스 스키마 설정
+database_schema:
+  # 주요 테이블
+  tables:
+    users:
+      fields: ["id", "email", "password", "name", "role", "grade", "class", "created_at", "updated_at"]
+      indexes: ["email", "role"]
+      
+    portfolios:
+      fields: ["id", "user_id", "cash_balance", "total_value", "created_at", "updated_at"]
+      indexes: ["user_id"]
+      
+    stocks:
+      fields: ["id", "symbol", "name", "market", "sector", "created_at", "updated_at"]
+      indexes: ["symbol", "market"]
+      
+    transactions:
+      fields: ["id", "user_id", "stock_id", "type", "quantity", "price", "total_amount", "reason", "news_reference", "created_at"]
+      indexes: ["user_id", "stock_id", "created_at"]
+      
+    holdings:
+      fields: ["id", "user_id", "stock_id", "quantity", "average_price", "created_at", "updated_at"]
+      indexes: ["user_id", "stock_id"]
+      
+    price_history:
+      fields: ["id", "stock_id", "price", "volume", "timestamp"]
+      indexes: ["stock_id", "timestamp"]
+
+# 📈 성능 최적화 설정
+performance:
+  # 캐싱 설정
+  caching:
+    stock_prices_ttl: 60      # 주식 가격 캐시 (초)
+    news_ttl: 1800           # 뉴스 캐시 (30분)
+    leaderboard_ttl: 3600    # 리더보드 캐시 (1시간)
+    
+  # 데이터베이스 최적화
+  database:
+    connection_pool_size: 20
+    query_timeout: 30000     # 30초
+    
+  # API 최적화
+  api:
+    compression: true
+    keep_alive_timeout: 5000
+    body_limit: "10mb"
+
+# 🧪 테스트 설정
+testing:
+  # 단위 테스트
+  unit:
+    framework: "Jest"
+    coverage_threshold: 80
+    test_environment: "node"
+    
+  # 통합 테스트
+  integration:
+    database: "test_database"
+    seed_data: true
+    
+  # E2E 테스트
+  e2e:
+    framework: "Playwright"
+    browsers: ["chromium", "firefox", "webkit"]
+    headless: true
+
+# 🚀 배포 설정
+deployment:
+  # Docker 설정
+  docker:
+    node_image: "node:18-alpine"
+    postgres_image: "postgres:15-alpine"
+    redis_image: "redis:7-alpine"
+    nginx_image: "nginx:alpine"
+    
+  # 환경 변수
+  env_vars:
+    required:
+      - "DATABASE_URL"
+      - "REDIS_URL"
+      - "JWT_SECRET"
+      - "KIS_APP_KEY"
+      - "KIS_APP_SECRET"
+    optional:
+      - "SENTRY_DSN"
+      - "AWS_ACCESS_KEY_ID"
+      - "AWS_SECRET_ACCESS_KEY"
+
+# 📝 문서화 설정
+documentation:
+  # API 문서
+  api:
+    tool: "Swagger/OpenAPI"
+    version: "3.0.0"
+    
+  # 코드 문서
+  code:
+    tool: "TypeDoc"
+    include_private: false
+    
+  # 사용자 가이드
+  user_guide:
+    format: "Markdown"
+    language: "Korean"
+
+# 🔍 모니터링 설정
+monitoring:
+  # 로깅
+  logging:
+    level: "info"
+    format: "json"
+    rotate: true
+    max_files: 5
+    max_size: "10m"
+    
+  # 메트릭
+  metrics:
+    collect_interval: 60     # 초
+    retention_period: "30d"
+    
+  # 알림
+  alerts:
+    error_threshold: 10      # 10분간 오류 수
+    response_time_threshold: 1000  # 1초
+
+# 🎓 교육 특화 설정
+education_features:
+  # 학급 관리
+  class_management:
+    max_students_per_class: 35
+    auto_class_assignment: false
+    
+  # 학습 분석
+  learning_analytics:
+    track_trading_patterns: true
+    generate_reports: true
+    export_formats: ["PDF", "Excel"]
+    
+  # 게임화 요소
+  gamification:
+    achievements: true
+    badges: true
+    progress_tracking: true
+    
+  # 안전 장치
+  safety:
+    content_filtering: true
+    inappropriate_content_reporting: true
+    teacher_oversight: true
+
+# 📞 지원 및 연락처
+support:
+  # 기술 지원
+  technical:
+    email: "tech-support@economic-stock.edu"
+    documentation: "https://docs.economic-stock.edu"
+    
+  # 교육 지원
+  educational:
+    email: "edu-support@economic-stock.edu"
+    training_materials: "https://training.economic-stock.edu"
+    
+  # 버그 리포트
+  bug_report:
+    github_issues: "https://github.com/your-username/economic-math-stock-app/issues"
+    email: "bugs@economic-stock.edu"
