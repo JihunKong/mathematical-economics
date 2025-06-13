@@ -42,7 +42,7 @@ export default function TradingPage() {
   const [refreshing, setRefreshing] = useState(false);
 
   // Redirect admin users to admin page
-  if (user?.role === 'ADMIN') {
+  if (user && user.role === 'ADMIN') {
     return <Navigate to="/admin" replace />;
   }
 

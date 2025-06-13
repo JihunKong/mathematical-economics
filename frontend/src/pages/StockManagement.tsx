@@ -83,7 +83,7 @@ export default function StockManagement() {
 
   const triggerCrawl = async () => {
     try {
-      const response = await api.post('/stock-management/crawl-prices');
+      await api.post('/stock-management/crawl-prices');
       toast.success('주식 가격 크롤링을 시작했습니다.');
     } catch (error) {
       toast.error('크롤링 시작에 실패했습니다.');
