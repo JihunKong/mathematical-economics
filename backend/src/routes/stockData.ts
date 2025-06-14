@@ -76,7 +76,7 @@ router.post('/backfill/:symbol', async (
 
 // Clear cache
 router.post('/cache/clear', async (
-  req: AuthRequest,
+  _req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {

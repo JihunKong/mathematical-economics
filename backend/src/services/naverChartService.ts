@@ -11,10 +11,10 @@ interface NaverChartItem {
   volume: number;
 }
 
-interface NaverChartResponse {
-  symbol: string;
-  chartdata: NaverChartItem[];
-}
+// interface NaverChartResponse {
+//   symbol: string;
+//   chartdata: NaverChartItem[];
+// }
 
 export class NaverChartService {
   private readonly baseUrl = 'https://fchart.stock.naver.com/sise.nhn';

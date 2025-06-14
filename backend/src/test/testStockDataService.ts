@@ -36,7 +36,7 @@ async function testStockDataService() {
     if (chartData.length > 0) {
       console.log(`차트 데이터 개수: ${chartData.length}개`);
       console.log('최근 5일 데이터:');
-      chartData.slice(-5).forEach((data, index) => {
+      chartData.slice(-5).forEach((data, _index) => {
         console.log(`  ${data.date.toLocaleDateString()}: 종가 ${data.close.toLocaleString()}, 거래량 ${data.volume.toLocaleString()}`);
       });
     }

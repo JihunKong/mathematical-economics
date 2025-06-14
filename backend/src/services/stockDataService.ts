@@ -6,7 +6,6 @@ import { MockStockService } from './mockStockService';
 import { NaverChartService } from './naverChartService';
 import { KRXApiService } from './krxApiService';
 import { prisma } from '../config/database';
-import { StockData, ChartData } from '../types/stock.types';
 
 interface StockPriceData {
   symbol: string;
@@ -96,9 +95,9 @@ export class StockDataService {
 
       // 3. Yahoo Finance 시도 (국제 주식용)
       const yahooSymbol = this.convertToYahooSymbol(symbol);
-      const yahooData = await this.yahooService.getStockData([yahooSymbol]);
-      if (yahooData && yahooData.length > 0) {
-        const stock = yahooData[0];
+      const yahooData = await this.yahooService.getStockPrice(yahooSymbol);
+      if (yahooData) {
+        const stock = yahooData;
         const priceData: StockPriceData = {
           symbol,
           name: stock.name,
@@ -426,7 +425,7 @@ export class StockDataService {
    * Mock 과거 데이터 생성
    */
   private generateMockHistoricalData(
-    symbol: string,
+    _symbol: string,
     startDate: Date,
     endDate: Date
   ): HistoricalData[] {
@@ -484,6 +483,7 @@ export class StockDataService {
       // StockPriceHistory에 저장
       await prisma.stockPriceHistory.create({
         data: {
+          stockId: stock.id,
           symbol: priceData.symbol.toUpperCase(),
           currentPrice: priceData.currentPrice,
           previousClose: priceData.previousClose,
@@ -573,26 +573,4 @@ export class StockDataService {
     logger.info('All stock data caches cleared');
   }
 
-  /**
-   * 재시도 로직을 포함한 API 호출
-   */
-  private async retryApiCall<T>(
-    apiCall: () => Promise<T>,
-    maxRetries: number = 3,
-    delay: number = 1000
-  ): Promise<T | null> {
-    for (let i = 0; i < maxRetries; i++) {
-      try {
-        return await apiCall();
-      } catch (error: any) {
-        logger.warn(`API call failed (attempt ${i + 1}/${maxRetries}):`, error.message);
-        
-        if (i < maxRetries - 1) {
-          await new Promise(resolve => setTimeout(resolve, delay * (i + 1)));
-        }
-      }
-    }
-    
-    return null;
-  }
 }

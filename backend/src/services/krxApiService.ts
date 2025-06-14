@@ -16,9 +16,9 @@ interface KRXStockData {
   LIST_SHRS: string;           // 상장주식수
 }
 
-interface KRXMarketData {
-  OutBlock_1: KRXStockData[];
-}
+// interface KRXMarketData {
+//   OutBlock_1: KRXStockData[];
+// }
 
 export class KRXApiService {
   private readonly baseUrl = 'http://data.krx.co.kr/comm/bldAttendant/getJsonData.cmd';
