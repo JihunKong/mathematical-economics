@@ -1,5 +1,5 @@
-import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcryptjs';
+import { PrismaClient, UserRole } from '@prisma/client';
+import bcrypt from 'bcrypt';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -17,7 +17,7 @@ async function initialize(): Promise<InitializationResult> {
     console.log('🚀 Starting application initialization...');
 
     // Check if initialization is needed
-    const adminEmail = process.env.ADMIN_EMAIL || 'admin@example.com';
+    const adminEmail = process.env.ADMIN_EMAIL || 'purusil55@gmail.com';
     const existingAdmin = await prisma.user.findUnique({
       where: { email: adminEmail }
     });
@@ -28,7 +28,7 @@ async function initialize(): Promise<InitializationResult> {
       // Create admin user
       console.log('📧 Creating admin user...');
       const hashedPassword = await bcrypt.hash(
-        process.env.ADMIN_PASSWORD || 'Admin123!@#',
+        process.env.ADMIN_PASSWORD || 'alsk2004A!@#',
         10
       );
 
@@ -37,9 +37,10 @@ async function initialize(): Promise<InitializationResult> {
           email: adminEmail,
           password: hashedPassword,
           name: 'System Administrator',
-          role: 'TEACHER',
-          grade: null,
-          class: 'ADMIN'
+          role: UserRole.ADMIN,
+          isActive: true,
+          initialCapital: 0,
+          currentCash: 0
         }
       });
 
@@ -47,12 +48,14 @@ async function initialize(): Promise<InitializationResult> {
       await prisma.portfolio.create({
         data: {
           userId: admin.id,
-          cashBalance: 10000000,
-          totalValue: 10000000
+          totalValue: 0,
+          totalCost: 0,
+          totalProfitLoss: 0,
+          totalProfitLossPercent: 0
         }
       });
 
-      console.log('✅ Admin user created successfully');
+      console.log(`✅ Admin user created successfully (${adminEmail})`);
     }
 
     // Create initial stocks if needed
@@ -61,16 +64,16 @@ async function initialize(): Promise<InitializationResult> {
       console.log('📈 Creating initial stock data...');
       
       const initialStocks = [
-        { symbol: 'AAPL', name: 'Apple Inc.', market: 'NASDAQ', sector: 'Technology' },
-        { symbol: 'GOOGL', name: 'Alphabet Inc.', market: 'NASDAQ', sector: 'Technology' },
-        { symbol: 'MSFT', name: 'Microsoft Corporation', market: 'NASDAQ', sector: 'Technology' },
-        { symbol: 'AMZN', name: 'Amazon.com Inc.', market: 'NASDAQ', sector: 'Consumer Cyclical' },
-        { symbol: 'TSLA', name: 'Tesla Inc.', market: 'NASDAQ', sector: 'Automotive' },
-        { symbol: 'META', name: 'Meta Platforms Inc.', market: 'NASDAQ', sector: 'Technology' },
-        { symbol: 'NVDA', name: 'NVIDIA Corporation', market: 'NASDAQ', sector: 'Technology' },
-        { symbol: 'JPM', name: 'JPMorgan Chase & Co.', market: 'NYSE', sector: 'Financial Services' },
-        { symbol: 'V', name: 'Visa Inc.', market: 'NYSE', sector: 'Financial Services' },
-        { symbol: 'JNJ', name: 'Johnson & Johnson', market: 'NYSE', sector: 'Healthcare' }
+        { symbol: '005930', name: '삼성전자', nameEn: 'Samsung Electronics', shortName: '삼성전자', market: 'KOSPI', sector: 'IT', isTracked: true, currentPrice: 70000, previousClose: 69500 },
+        { symbol: '000660', name: 'SK하이닉스', nameEn: 'SK Hynix', shortName: 'SK하이닉스', market: 'KOSPI', sector: 'IT', isTracked: true, currentPrice: 130000, previousClose: 129000 },
+        { symbol: '035720', name: '카카오', nameEn: 'Kakao', shortName: '카카오', market: 'KOSPI', sector: 'IT', isTracked: true, currentPrice: 45000, previousClose: 44500 },
+        { symbol: '035420', name: 'NAVER', nameEn: 'Naver', shortName: 'NAVER', market: 'KOSPI', sector: 'IT', isTracked: true, currentPrice: 220000, previousClose: 218000 },
+        { symbol: '051910', name: 'LG화학', nameEn: 'LG Chem', shortName: 'LG화학', market: 'KOSPI', sector: '화학', isTracked: true, currentPrice: 450000, previousClose: 448000 },
+        { symbol: '006400', name: '삼성SDI', nameEn: 'Samsung SDI', shortName: '삼성SDI', market: 'KOSPI', sector: '전기전자', isTracked: true, currentPrice: 380000, previousClose: 378000 },
+        { symbol: '207940', name: '삼성바이오로직스', nameEn: 'Samsung BioLogics', shortName: '삼바이오', market: 'KOSPI', sector: '의약품', isTracked: true, currentPrice: 750000, previousClose: 745000 },
+        { symbol: '000270', name: '기아', nameEn: 'Kia', shortName: '기아', market: 'KOSPI', sector: '운수장비', isTracked: true, currentPrice: 82000, previousClose: 81500 },
+        { symbol: '005380', name: '현대차', nameEn: 'Hyundai Motor', shortName: '현대차', market: 'KOSPI', sector: '운수장비', isTracked: true, currentPrice: 185000, previousClose: 184000 },
+        { symbol: '066570', name: 'LG전자', nameEn: 'LG Electronics', shortName: 'LG전자', market: 'KOSPI', sector: '전기전자', isTracked: true, currentPrice: 95000, previousClose: 94500 }
       ];
 
       await prisma.stock.createMany({
@@ -86,7 +89,9 @@ async function initialize(): Promise<InitializationResult> {
     // Create portfolios for users without one
     const usersWithoutPortfolio = await prisma.user.findMany({
       where: {
-        portfolio: null
+        portfolios: {
+          none: {}
+        }
       }
     });
 
@@ -94,11 +99,14 @@ async function initialize(): Promise<InitializationResult> {
       console.log(`💼 Creating portfolios for ${usersWithoutPortfolio.length} users...`);
       
       for (const user of usersWithoutPortfolio) {
+        const initialCapital = user.role === UserRole.ADMIN ? 0 : 10000000;
         await prisma.portfolio.create({
           data: {
             userId: user.id,
-            cashBalance: user.role === 'TEACHER' ? 10000000 : 1000000,
-            totalValue: user.role === 'TEACHER' ? 10000000 : 1000000
+            totalValue: initialCapital,
+            totalCost: 0,
+            totalProfitLoss: 0,
+            totalProfitLossPercent: 0
           }
         });
       }
@@ -106,41 +114,39 @@ async function initialize(): Promise<InitializationResult> {
       console.log('✅ All users now have portfolios');
     }
 
-    // Create demo student accounts if no students exist
-    const studentCount = await prisma.user.count({
-      where: { role: 'STUDENT' }
+    // Create demo teacher account if no teachers exist
+    const teacherCount = await prisma.user.count({
+      where: { role: UserRole.TEACHER }
     });
 
-    if (studentCount === 0 && process.env.CREATE_DEMO_STUDENTS === 'true') {
-      console.log('👥 Creating demo student accounts...');
+    if (teacherCount === 0) {
+      console.log('👥 Creating demo teacher account...');
       
-      const demoStudents = [
-        { email: 'student1@example.com', name: '김철수', grade: 1, class: 'A' },
-        { email: 'student2@example.com', name: '이영희', grade: 1, class: 'A' },
-        { email: 'student3@example.com', name: '박민수', grade: 2, class: 'B' }
-      ];
+      const hashedPassword = await bcrypt.hash('teacher123!', 10);
+      
+      const teacher = await prisma.user.create({
+        data: {
+          email: 'teacher1@test.com',
+          name: '김선생',
+          password: hashedPassword,
+          role: UserRole.TEACHER,
+          isActive: true,
+          initialCapital: 10000000,
+          currentCash: 10000000
+        }
+      });
 
-      const hashedPassword = await bcrypt.hash('Student123!', 10);
+      await prisma.portfolio.create({
+        data: {
+          userId: teacher.id,
+          totalValue: 10000000,
+          totalCost: 0,
+          totalProfitLoss: 0,
+          totalProfitLossPercent: 0
+        }
+      });
 
-      for (const student of demoStudents) {
-        const user = await prisma.user.create({
-          data: {
-            ...student,
-            password: hashedPassword,
-            role: 'STUDENT'
-          }
-        });
-
-        await prisma.portfolio.create({
-          data: {
-            userId: user.id,
-            cashBalance: 1000000,
-            totalValue: 1000000
-          }
-        });
-      }
-
-      console.log(`✅ Created ${demoStudents.length} demo student accounts`);
+      console.log('✅ Created demo teacher account (teacher1@test.com / teacher123!)');
     }
 
     // Verify database state
