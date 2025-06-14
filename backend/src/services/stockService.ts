@@ -10,57 +10,72 @@ export class StockService {
     this.stockDataService = new StockDataService();
   }
   async getAllStocks(userId: string, market?: string) {
-    // Get user's class
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      include: { class: true },
-    });
-
-    let where: any = { isActive: true };
-    if (market) {
-      where.market = market;
-    }
-
-    // If user is a student with a class, only show allowed stocks
-    if (user?.role === 'STUDENT' && user.classId) {
-      const allowedStocks = await prisma.allowedStock.findMany({
-        where: {
-          classId: user.classId,
-          isActive: true,
-        },
-        select: { stockId: true },
+    try {
+      // Get user's class
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        include: { class: true },
       });
 
-      const allowedStockIds = allowedStocks.map(as => as.stockId);
-      where.id = { in: allowedStockIds };
+      let where: any = { isActive: true };
+      if (market) {
+        where.market = market;
+      }
+
+      // If user is a student with a class, only show allowed stocks
+      if (user?.role === 'STUDENT' && user.classId) {
+        const allowedStocks = await prisma.allowedStock.findMany({
+          where: {
+            classId: user.classId,
+            isActive: true,
+          },
+          select: { stockId: true },
+        });
+
+        const allowedStockIds = allowedStocks.map(as => as.stockId);
+        where.id = { in: allowedStockIds };
+      }
+      
+      const stocks = await prisma.stock.findMany({
+        where,
+        orderBy: { marketCap: 'desc' },
+        take: 100, // Limit to top 100 stocks
+      });
+
+      // Return empty array if no stocks found
+      if (!stocks || stocks.length === 0) {
+        console.log('No stocks found in database. Returning empty array.');
+        return [];
+      }
+
+      // 실시간 가격 데이터로 업데이트
+      const stocksWithRealTimeData = await Promise.all(
+        stocks.map(async (stock) => {
+          try {
+            const realtimeData = await this.stockDataService.getStockPrice(stock.symbol);
+            if (realtimeData) {
+              return {
+                ...stock,
+                currentPrice: realtimeData.currentPrice,
+                previousClose: realtimeData.previousClose,
+                dayOpen: realtimeData.dayOpen,
+                dayHigh: realtimeData.dayHigh,
+                dayLow: realtimeData.dayLow,
+                volume: BigInt(realtimeData.volume),
+              };
+            }
+          } catch (error) {
+            console.error(`Failed to get real-time data for ${stock.symbol}:`, error);
+          }
+          return stock;
+        })
+      );
+
+      return stocksWithRealTimeData.map(stock => this.formatStockData(stock));
+    } catch (error) {
+      console.error('Error in getAllStocks:', error);
+      return [];
     }
-    
-    const stocks = await prisma.stock.findMany({
-      where,
-      orderBy: { marketCap: 'desc' },
-      take: 100, // Limit to top 100 stocks
-    });
-
-    // 실시간 가격 데이터로 업데이트
-    const stocksWithRealTimeData = await Promise.all(
-      stocks.map(async (stock) => {
-        const realtimeData = await this.stockDataService.getStockPrice(stock.symbol);
-        if (realtimeData) {
-          return {
-            ...stock,
-            currentPrice: realtimeData.currentPrice,
-            previousClose: realtimeData.previousClose,
-            dayOpen: realtimeData.dayOpen,
-            dayHigh: realtimeData.dayHigh,
-            dayLow: realtimeData.dayLow,
-            volume: BigInt(realtimeData.volume),
-          };
-        }
-        return stock;
-      })
-    );
-
-    return stocksWithRealTimeData.map(stock => this.formatStockData(stock));
   }
 
   async searchStocks(userId: string, query: string, market?: string) {
@@ -168,23 +183,26 @@ export class StockService {
   }
 
   private formatStockData(stock: any): StockData {
-    const change = stock.currentPrice - stock.previousClose;
-    const changePercent = (change / stock.previousClose) * 100;
+    // Handle missing price data gracefully
+    const currentPrice = stock.currentPrice || 0;
+    const previousClose = stock.previousClose || currentPrice || 1;
+    const change = currentPrice - previousClose;
+    const changePercent = previousClose !== 0 ? (change / previousClose) * 100 : 0;
 
     return {
       symbol: stock.symbol,
       name: stock.name,
       market: stock.market,
       sector: stock.sector,
-      currentPrice: stock.currentPrice,
-      previousClose: stock.previousClose,
-      dayOpen: stock.dayOpen,
-      dayHigh: stock.dayHigh,
-      dayLow: stock.dayLow,
-      volume: stock.volume,
-      marketCap: stock.marketCap,
-      per: stock.per,
-      eps: stock.eps,
+      currentPrice: currentPrice,
+      previousClose: previousClose,
+      dayOpen: stock.dayOpen || currentPrice,
+      dayHigh: stock.dayHigh || currentPrice,
+      dayLow: stock.dayLow || currentPrice,
+      volume: stock.volume || BigInt(0),
+      marketCap: stock.marketCap || BigInt(0),
+      per: stock.per || 0,
+      eps: stock.eps || 0,
       change,
       changePercent,
     };

@@ -10,9 +10,11 @@ import realStockRoutes from './realStock';
 import adminRoutes from './admin';
 import stockManagementRoutes from './stockManagement';
 import stockDataRoutes from './stockData';
+import healthRoutes from './health';
 
 const router = Router();
 
+router.use('/health', healthRoutes);
 router.use('/auth', authRoutes);
 router.use('/stocks', stocksRoutes);
 router.use('/trading', tradingRoutes);

@@ -12,6 +12,44 @@ patchBigIntJSON();
 
 const PORT = process.env.PORT || 5000;
 
+async function checkInitialization() {
+  try {
+    // Check if system is initialized
+    const userCount = await prisma.user.count();
+    const stockCount = await prisma.stock.count();
+    
+    logger.info('System status check:');
+    logger.info(`  Users: ${userCount}`);
+    logger.info(`  Stocks: ${stockCount}`);
+    
+    if (userCount === 0 || stockCount === 0) {
+      logger.warn('System appears to be uninitialized. Please run initialization script.');
+    }
+    
+    // Ensure all users have portfolios
+    const usersWithoutPortfolio = await prisma.user.findMany({
+      where: { portfolio: null },
+      select: { id: true, email: true }
+    });
+    
+    if (usersWithoutPortfolio.length > 0) {
+      logger.info(`Creating portfolios for ${usersWithoutPortfolio.length} users...`);
+      for (const user of usersWithoutPortfolio) {
+        await prisma.portfolio.create({
+          data: {
+            userId: user.id,
+            cashBalance: 1000000,
+            totalValue: 1000000
+          }
+        });
+      }
+      logger.info('Portfolios created successfully');
+    }
+  } catch (error) {
+    logger.error('Error checking initialization:', error);
+  }
+}
+
 const startServer = async () => {
   let server: Server;
   
@@ -19,6 +57,9 @@ const startServer = async () => {
     // Test database connection
     await prisma.$connect();
     logger.info('Database connected successfully');
+    
+    // Check initialization status
+    await checkInitialization();
 
     const { httpServer } = createApp();
 

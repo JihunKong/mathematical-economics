@@ -67,16 +67,20 @@ services:
       ALPHA_VANTAGE_API_KEY: ${ALPHA_VANTAGE_API_KEY}
       NAVER_CLIENT_ID: ${NAVER_CLIENT_ID}
       NAVER_CLIENT_SECRET: ${NAVER_CLIENT_SECRET}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@example.com}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin123!@#}
+      AUTO_CREATE_STOCKS: ${AUTO_CREATE_STOCKS:-true}
+      CREATE_DEMO_STUDENTS: ${CREATE_DEMO_STUDENTS:-false}
     volumes:
       - ./backend/logs:/app/logs
       - ./backend/public:/app/public
       - ./backend/.env:/app/.env:ro
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5001/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:5001/api/health/ready"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 40s
+      retries: 5
+      start_period: 60s
     networks:
       - app-network
     logging:

@@ -57,8 +57,14 @@ COPY --from=builder /app/dist ./dist
 # Copy scripts directory
 COPY scripts ./scripts
 
+# Install TypeScript for compiling initialization script
+RUN npm install --save-dev typescript @types/node
+
 # Make Python scripts executable
 RUN chmod +x scripts/*.py
+
+# Compile TypeScript initialization script
+RUN npx tsc scripts/initialize.ts --outDir scripts --esModuleInterop --skipLibCheck --resolveJsonModule
 
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs
@@ -75,5 +81,5 @@ USER nodejs
 # Expose port
 EXPOSE 5001
 
-# Start the application with migrations
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/server.js"]
+# Start the application with migrations and initialization
+CMD ["sh", "-c", "npx prisma migrate deploy && node scripts/initialize.js && node dist/server.js"]
