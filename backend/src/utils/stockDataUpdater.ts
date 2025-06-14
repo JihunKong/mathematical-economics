@@ -143,7 +143,7 @@ export class StockDataUpdater {
   /**
    * 수동으로 특정 주식 가격 업데이트
    */
-  async updateSingleStock(symbol: string) {
+  async updateSingleStock(symbol: string): Promise<any> {
     try {
       const priceData = await this.stockDataService.getStockPrice(symbol);
       
@@ -163,7 +163,7 @@ export class StockDataUpdater {
   /**
    * 과거 데이터 백필 (초기 데이터 로드용)
    */
-  async backfillHistoricalData(symbol: string, period: '1M' | '3M' | '6M' | '1Y' = '1M') {
+  async backfillHistoricalData(symbol: string, period: '1M' | '3M' | '6M' | '1Y' = '1M'): Promise<any[]> {
     try {
       logger.info(`Backfilling historical data for ${symbol} (${period})`);
       
