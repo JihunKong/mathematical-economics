@@ -28,8 +28,12 @@ async function checkInitialization() {
     
     // Ensure all users have portfolios
     const usersWithoutPortfolio = await prisma.user.findMany({
-      where: { portfolio: null },
-      select: { id: true, email: true }
+      where: { 
+        portfolios: {
+          none: {}
+        }
+      },
+      select: { id: true, email: true, currentCash: true }
     });
     
     if (usersWithoutPortfolio.length > 0) {
@@ -38,8 +42,10 @@ async function checkInitialization() {
         await prisma.portfolio.create({
           data: {
             userId: user.id,
-            cashBalance: 1000000,
-            totalValue: 1000000
+            totalValue: user.currentCash,
+            totalCost: 0,
+            totalProfitLoss: 0,
+            totalProfitLossPercent: 0
           }
         });
       }
