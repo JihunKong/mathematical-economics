@@ -3,6 +3,8 @@ import { logger } from '../utils/logger';
 import { NaverFinanceServiceV2 } from './naverFinanceServiceV2';
 import { YahooFinanceService } from './yahooFinanceService';
 import { MockStockService } from './mockStockService';
+import { NaverChartService } from './naverChartService';
+import { KRXApiService } from './krxApiService';
 import { prisma } from '../config/database';
 import { StockData, ChartData } from '../types/stock.types';
 
@@ -34,6 +36,8 @@ export class StockDataService {
   private naverService: NaverFinanceServiceV2;
   private yahooService: YahooFinanceService;
   private mockService: MockStockService;
+  private naverChartService: NaverChartService;
+  private krxService: KRXApiService;
   private cache = new Map<string, { data: any; timestamp: number }>();
   private readonly CACHE_TTL: number;
   private readonly HISTORICAL_CACHE_TTL: number;
@@ -43,6 +47,8 @@ export class StockDataService {
     this.naverService = new NaverFinanceServiceV2();
     this.yahooService = new YahooFinanceService();
     this.mockService = new MockStockService();
+    this.naverChartService = new NaverChartService();
+    this.krxService = new KRXApiService();
     
     // 환경변수에서 설정 읽기
     this.CACHE_TTL = parseInt(process.env.STOCK_DATA_CACHE_TTL || '60000');
@@ -52,7 +58,7 @@ export class StockDataService {
 
   /**
    * 주식 실시간 가격 데이터 조회
-   * 여러 소스를 순차적으로 시도하여 데이터를 가져옴
+   * KRX API를 우선적으로 사용하여 실시간 데이터를 가져옴
    */
   async getStockPrice(symbol: string): Promise<StockPriceData | null> {
     try {
@@ -64,7 +70,19 @@ export class StockDataService {
         return cached.data;
       }
 
-      // 1. 먼저 네이버 금융에서 시도 (한국 주식용)
+      // 1. KRX API에서 실시간 데이터 시도 (장중에 가장 정확함)
+      const krxData = await this.krxService.getStockPrice(symbol);
+      if (krxData) {
+        const priceData: StockPriceData = {
+          ...krxData,
+          timestamp: new Date(),
+        };
+        this.cache.set(cacheKey, { data: priceData, timestamp: Date.now() });
+        await this.savePriceToDatabase(priceData);
+        return priceData;
+      }
+
+      // 2. 네이버 금융에서 시도 (장 마감 후 또는 KRX 실패 시)
       const naverData = await this.naverService.getStockPrice(symbol);
       if (naverData) {
         const priceData: StockPriceData = {
@@ -76,7 +94,7 @@ export class StockDataService {
         return priceData;
       }
 
-      // 2. Yahoo Finance 시도 (국제 주식용)
+      // 3. Yahoo Finance 시도 (국제 주식용)
       const yahooSymbol = this.convertToYahooSymbol(symbol);
       const yahooData = await this.yahooService.getStockData([yahooSymbol]);
       if (yahooData && yahooData.length > 0) {
@@ -100,7 +118,7 @@ export class StockDataService {
         return priceData;
       }
 
-      // 3. 모든 실제 소스 실패시 Mock 데이터 사용
+      // 4. 모든 실제 소스 실패시 Mock 데이터 사용
       logger.warn(`Using mock data for ${symbol} as real sources failed`);
       const mockData = await this.mockService.getStockPrice(symbol);
       if (mockData) {
@@ -121,8 +139,31 @@ export class StockDataService {
 
   /**
    * 여러 종목의 가격 데이터 일괄 조회
+   * KRX API를 활용하여 효율적으로 처리
    */
   async getMultipleStockPrices(symbols: string[]): Promise<StockPriceData[]> {
+    try {
+      // KRX API로 한 번에 여러 종목 조회 시도
+      const krxResults = await this.krxService.getMultipleStockPrices(symbols);
+      if (krxResults && krxResults.length > 0) {
+        const results = krxResults.map(data => ({
+          ...data,
+          timestamp: new Date(),
+        }));
+        
+        // 캐시 업데이트
+        for (const result of results) {
+          const cacheKey = `price:${result.symbol}`;
+          this.cache.set(cacheKey, { data: result, timestamp: Date.now() });
+        }
+        
+        return results;
+      }
+    } catch (error: any) {
+      logger.error('Failed to get multiple prices from KRX:', error);
+    }
+
+    // KRX 실패 시 개별 조회
     const results: StockPriceData[] = [];
     
     // 배치 처리로 API 호출 제한 관리
@@ -149,6 +190,7 @@ export class StockDataService {
 
   /**
    * 주식 과거 데이터 조회 (차트용)
+   * 네이버 금융 차트 API와 KRX 실시간 데이터를 결합
    */
   async getHistoricalData(
     symbol: string,
@@ -163,39 +205,81 @@ export class StockDataService {
         return cached.data;
       }
 
-      // 기간 계산
-      const endDate = new Date();
-      const startDate = new Date();
+      // 기간별 데이터 포인트 수 결정
+      let timeframe: 'day' | 'week' | 'month' = 'day';
+      let count = 30;
       
       switch (period) {
         case '1D':
-          startDate.setDate(startDate.getDate() - 1);
+          timeframe = 'day';
+          count = 1;
           break;
         case '1W':
-          startDate.setDate(startDate.getDate() - 7);
+          timeframe = 'day';
+          count = 7;
           break;
         case '1M':
-          startDate.setMonth(startDate.getMonth() - 1);
+          timeframe = 'day';
+          count = 30;
           break;
         case '3M':
-          startDate.setMonth(startDate.getMonth() - 3);
+          timeframe = 'day';
+          count = 90;
           break;
         case '6M':
-          startDate.setMonth(startDate.getMonth() - 6);
+          timeframe = 'week';
+          count = 26;
           break;
         case '1Y':
-          startDate.setFullYear(startDate.getFullYear() - 1);
+          timeframe = 'week';
+          count = 52;
           break;
       }
 
-      // 1. 먼저 데이터베이스에서 조회
+      // 1. 네이버에서 차트 데이터 가져오기
+      const naverChartData = await this.naverChartService.getChartData(symbol, timeframe, count);
+      if (naverChartData && naverChartData.length > 0) {
+        const formattedData = this.naverChartService.formatChartData(naverChartData);
+        
+        // 2. 오늘 데이터가 있는지 확인하고 KRX에서 추가
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        const lastDataDate = new Date(formattedData[formattedData.length - 1].date);
+        lastDataDate.setHours(0, 0, 0, 0);
+        
+        // 오늘 데이터가 없고 장중이면 KRX에서 실시간 데이터 추가
+        if (lastDataDate < today && this.isMarketDay(today)) {
+          const krxData = await this.krxService.getStockPrice(symbol);
+          if (krxData) {
+            formattedData.push({
+              date: new Date(),
+              open: krxData.dayOpen,
+              high: krxData.dayHigh,
+              low: krxData.dayLow,
+              close: krxData.currentPrice,
+              volume: krxData.volume,
+            });
+          }
+        }
+        
+        this.cache.set(cacheKey, { data: formattedData, timestamp: Date.now() });
+        await this.saveHistoricalToDatabase(symbol, formattedData);
+        return formattedData;
+      }
+
+      // 2. 데이터베이스에서 조회
+      const endDate = new Date();
+      const startDate = new Date();
+      this.calculateDateRange(startDate, period);
+      
       const dbData = await this.getHistoricalFromDatabase(symbol, startDate, endDate);
       if (dbData && dbData.length > 0) {
         this.cache.set(cacheKey, { data: dbData, timestamp: Date.now() });
         return dbData;
       }
 
-      // 2. Yahoo Finance에서 과거 데이터 조회
+      // 3. Yahoo Finance에서 과거 데이터 조회
       const yahooSymbol = this.convertToYahooSymbol(symbol);
       const yahooData = await this.fetchYahooHistoricalData(yahooSymbol, startDate, endDate);
       if (yahooData && yahooData.length > 0) {
@@ -204,7 +288,7 @@ export class StockDataService {
         return yahooData;
       }
 
-      // 3. Mock 데이터 생성
+      // 4. Mock 데이터 생성
       logger.warn(`Using mock historical data for ${symbol}`);
       const mockData = this.generateMockHistoricalData(symbol, startDate, endDate);
       this.cache.set(cacheKey, { data: mockData, timestamp: Date.now() });
@@ -213,6 +297,45 @@ export class StockDataService {
       logger.error(`Failed to get historical data for ${symbol}:`, error);
       return [];
     }
+  }
+
+  /**
+   * 기간에 따른 시작 날짜 계산
+   */
+  private calculateDateRange(startDate: Date, period: string): void {
+    switch (period) {
+      case '1D':
+        startDate.setDate(startDate.getDate() - 1);
+        break;
+      case '1W':
+        startDate.setDate(startDate.getDate() - 7);
+        break;
+      case '1M':
+        startDate.setMonth(startDate.getMonth() - 1);
+        break;
+      case '3M':
+        startDate.setMonth(startDate.getMonth() - 3);
+        break;
+      case '6M':
+        startDate.setMonth(startDate.getMonth() - 6);
+        break;
+      case '1Y':
+        startDate.setFullYear(startDate.getFullYear() - 1);
+        break;
+    }
+  }
+
+  /**
+   * 장 운영일 확인
+   */
+  private isMarketDay(date: Date): boolean {
+    const dayOfWeek = date.getDay();
+    // 주말 제외
+    if (dayOfWeek === 0 || dayOfWeek === 6) {
+      return false;
+    }
+    // TODO: 공휴일 체크 로직 추가
+    return true;
   }
 
   /**
@@ -445,7 +568,9 @@ export class StockDataService {
    */
   clearCache(): void {
     this.cache.clear();
-    logger.info('Stock data cache cleared');
+    this.naverChartService.clearCache();
+    this.krxService.clearCache();
+    logger.info('All stock data caches cleared');
   }
 
   /**
