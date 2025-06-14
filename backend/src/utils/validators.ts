@@ -20,8 +20,9 @@ export const authValidators = {
       .isIn(['STUDENT', 'TEACHER'])
       .withMessage('Role must be either STUDENT or TEACHER'),
     body('classCode')
-      .optional()
       .trim()
+      .notEmpty()
+      .withMessage('Class code is required')
       .isLength({ min: 6, max: 10 })
       .withMessage('Class code must be between 6 and 10 characters'),
   ],

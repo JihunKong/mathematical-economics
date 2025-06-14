@@ -192,3 +192,73 @@ export const toggleUserStatus = async (req: Request, res: Response, next: NextFu
     next(error);
   }
 };
+
+// Create teacher account directly by admin
+export const createTeacherAccount = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { email, name, password } = req.body;
+
+    // Validate inputs
+    if (!email || !name || !password) {
+      throw new AppError('Email, name, and password are required', 400);
+    }
+
+    if (password.length < 6) {
+      throw new AppError('Password must be at least 6 characters long', 400);
+    }
+
+    if (!/\d/.test(password)) {
+      throw new AppError('Password must contain at least one number', 400);
+    }
+
+    // Check if email already exists
+    const existingUser = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (existingUser) {
+      throw new AppError('User with this email already exists', 400);
+    }
+
+    // Hash password
+    const hashedPassword = await hashPassword(password);
+
+    // Create teacher account
+    const teacher = await prisma.user.create({
+      data: {
+        email,
+        name,
+        password: hashedPassword,
+        role: UserRole.TEACHER,
+        isActive: true, // Teachers created by admin are immediately active
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        isActive: true,
+        createdAt: true,
+      },
+    });
+
+    // Create portfolio for teacher (with 0 balance)
+    await prisma.portfolio.create({
+      data: {
+        userId: teacher.id,
+        totalValue: 0,
+        totalCost: 0,
+        totalProfitLoss: 0,
+        totalProfitLossPercent: 0,
+      },
+    });
+
+    res.json({
+      success: true,
+      message: 'Teacher account created successfully',
+      data: teacher,
+    });
+  } catch (error) {
+    next(error);
+  }
+};

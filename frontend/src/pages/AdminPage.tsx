@@ -25,13 +25,18 @@ export default function AdminPage() {
   const [pendingUsers, setPendingUsers] = useState<User[]>([]);
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'pending' | 'users'>('pending');
+  const [activeTab, setActiveTab] = useState<'pending' | 'users' | 'createTeacher'>('pending');
   const [resetPasswordModal, setResetPasswordModal] = useState<{
     isOpen: boolean;
     userId: string;
     userName: string;
   }>({ isOpen: false, userId: '', userName: '' });
   const [newPassword, setNewPassword] = useState('');
+  const [teacherForm, setTeacherForm] = useState({
+    email: '',
+    name: '',
+    password: ''
+  });
 
   const { user } = useSelector((state: RootState) => state.auth);
 
@@ -118,6 +123,33 @@ export default function AdminPage() {
     }
   };
 
+  const handleCreateTeacher = async () => {
+    if (!teacherForm.email || !teacherForm.name || !teacherForm.password) {
+      toast.error('모든 필드를 입력해주세요');
+      return;
+    }
+
+    if (teacherForm.password.length < 6) {
+      toast.error('비밀번호는 최소 6자 이상이어야 합니다');
+      return;
+    }
+
+    if (!/\d/.test(teacherForm.password)) {
+      toast.error('비밀번호는 숫자를 포함해야 합니다');
+      return;
+    }
+
+    try {
+      await api.post('/admin/users/create-teacher', teacherForm);
+      toast.success('교사 계정이 생성되었습니다');
+      setTeacherForm({ email: '', name: '', password: '' });
+      fetchData();
+    } catch (error: any) {
+      console.error('Failed to create teacher:', error);
+      toast.error(error.response?.data?.message || '교사 계정 생성에 실패했습니다');
+    }
+  };
+
   const formatDate = (dateString: string) => {
     return new Intl.DateTimeFormat('ko-KR', {
       year: 'numeric',
@@ -172,6 +204,18 @@ export default function AdminPage() {
         >
           <Users className="w-4 h-4 inline mr-2" />
           전체 사용자 ({allUsers.length})
+        </button>
+        <button
+          onClick={() => setActiveTab('createTeacher')}
+          className={clsx(
+            'px-4 py-2 font-medium border-b-2 transition-colors',
+            activeTab === 'createTeacher'
+              ? 'border-blue-500 text-blue-600'
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+          )}
+        >
+          <UserCheck className="w-4 h-4 inline mr-2" />
+          교사 계정 생성
         </button>
       </div>
 
@@ -395,6 +439,76 @@ export default function AdminPage() {
               >
                 재설정
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create Teacher Tab */}
+      {activeTab === 'createTeacher' && (
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-lg font-semibold mb-4">교사 계정 생성</h2>
+          
+          <div className="max-w-md">
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  이메일
+                </label>
+                <input
+                  type="email"
+                  value={teacherForm.email}
+                  onChange={(e) => setTeacherForm({ ...teacherForm, email: e.target.value })}
+                  className="input"
+                  placeholder="teacher@school.ac.kr"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  이름
+                </label>
+                <input
+                  type="text"
+                  value={teacherForm.name}
+                  onChange={(e) => setTeacherForm({ ...teacherForm, name: e.target.value })}
+                  className="input"
+                  placeholder="홍길동 선생님"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  초기 비밀번호
+                </label>
+                <input
+                  type="text"
+                  value={teacherForm.password}
+                  onChange={(e) => setTeacherForm({ ...teacherForm, password: e.target.value })}
+                  className="input"
+                  placeholder="초기 비밀번호 (교사에게 전달)"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  * 최소 6자 이상, 숫자 포함 필수
+                </p>
+              </div>
+              
+              <button
+                onClick={handleCreateTeacher}
+                disabled={!teacherForm.email || !teacherForm.name || !teacherForm.password}
+                className="btn btn-primary w-full"
+              >
+                교사 계정 생성
+              </button>
+            </div>
+            
+            <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+              <h3 className="font-medium text-blue-900 mb-2">안내사항</h3>
+              <ul className="text-sm text-blue-800 space-y-1">
+                <li>• 교사 계정은 관리자만 생성할 수 있습니다</li>
+                <li>• 생성된 교사는 로그인 후 클래스를 만들어야 합니다</li>
+                <li>• 학생은 교사가 생성한 클래스 코드로만 가입 가능합니다</li>
+              </ul>
             </div>
           </div>
         </div>

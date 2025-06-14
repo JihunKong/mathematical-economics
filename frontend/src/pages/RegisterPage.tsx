@@ -31,7 +31,7 @@ export default function RegisterPage() {
     try {
       const { confirmPassword, ...registerData } = data;
       await api.register(registerData);
-      toast.success('회원가입이 완료되었습니다! 관리자 승인 후 로그인이 가능합니다.');
+      toast.success('회원가입이 완료되었습니다! 승인 후 로그인이 가능합니다.');
       navigate('/login');
     } catch (error) {
       toast.error('회원가입에 실패했습니다.');
@@ -52,7 +52,7 @@ export default function RegisterPage() {
           </p>
           <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
             <p className="text-sm text-blue-800 text-center">
-              🚨 가입 후 관리자 승인이 완료되어야 로그인이 가능합니다
+              🚨 클래스 코드는 교사로부터 받아야 합니다
             </p>
           </div>
         </div>
@@ -146,16 +146,29 @@ export default function RegisterPage() {
 
             <div>
               <label htmlFor="classCode" className="block text-sm font-medium text-gray-700">
-                클래스 코드 (선택사항)
+                클래스 코드 <span className="text-red-500">*</span>
               </label>
               <input
-                {...register('classCode')}
+                {...register('classCode', {
+                  required: '클래스 코드를 입력해주세요',
+                  minLength: {
+                    value: 6,
+                    message: '클래스 코드는 6자리입니다',
+                  },
+                  maxLength: {
+                    value: 10,
+                    message: '올바른 클래스 코드를 입력해주세요',
+                  },
+                })}
                 type="text"
                 className="input mt-1"
-                placeholder="교사로부터 받은 클래스 코드 (선택사항)"
+                placeholder="교사로부터 받은 클래스 코드"
               />
+              {errors.classCode && (
+                <p className="mt-1 text-sm text-red-600">{errors.classCode.message}</p>
+              )}
               <p className="mt-1 text-xs text-gray-500">
-                가입 후 관리자가 학생 또는 교사 권한을 부여합니다
+                교사로부터 받은 클래스 코드를 입력해주세요
               </p>
             </div>
           </div>
