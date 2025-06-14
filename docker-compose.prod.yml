@@ -46,6 +46,7 @@ services:
       DATABASE_URL: postgresql://postgres:postgres123@postgres:5432/economic_math_stock_db
       REDIS_URL: redis://redis:6379
       CORS_ORIGIN: http://localhost:8081
+      ALLOWED_ORIGINS: "*"
     ports:
       - "5001:5000"
     depends_on:
