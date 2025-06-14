@@ -17,8 +17,8 @@ model User {
   name             String
   role             UserRole       @default(STUDENT)
   isActive         Boolean        @default(false) // Requires admin approval
-  initialCapital   Float          @default(1000000) // Starting with 1 million won
-  currentCash      Float          @default(1000000)
+  initialCapital   Float          @default(10000000) // Starting with 10 million won
+  currentCash      Float          @default(10000000)
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
 
@@ -55,12 +55,14 @@ model Class {
 
 model Stock {
   id               String         @id @default(cuid())
-  symbol           String         @unique
-  name             String
-  market           String         // KOSPI, KOSDAQ
+  symbol           String         @unique  // 종목코드 (e.g., "005930")
+  name             String                  // 한글 종목명
+  nameEn           String?                 // 영문 종목명
+  shortName        String?                 // 단축명
+  market           String                  // KOSPI, KOSDAQ
   sector           String?
-  currentPrice     Float
-  previousClose    Float
+  currentPrice     Float          @default(0)
+  previousClose    Float          @default(0)
   dayOpen          Float?
   dayHigh          Float?
   dayLow           Float?
@@ -70,6 +72,7 @@ model Stock {
   eps              Float?         // Earnings Per Share
   isActive         Boolean        @default(true)  // Whether stock is available for trading
   isTracked        Boolean        @default(false) // Whether to track price history
+  createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
 
   // Relations
@@ -81,6 +84,7 @@ model Stock {
   
   @@index([symbol])
   @@index([isTracked])
+  @@index([name])
 }
 
 model Portfolio {

@@ -2,7 +2,10 @@ import { useEffect, useState } from 'react';
 import { useAppSelector } from '@/hooks/useRedux';
 import api from '@/services/api';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
+import RealtimePriceCard from '@/components/stock/RealtimePriceCard';
+import MiniChart from '@/components/stock/MiniChart';
 import { Link, Navigate } from 'react-router-dom';
+import { TrendingUp, TrendingDown, ArrowRight, RefreshCw } from 'lucide-react';
 import clsx from 'clsx';
 
 interface PortfolioSummary {

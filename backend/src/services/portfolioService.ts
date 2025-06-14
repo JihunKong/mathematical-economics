@@ -164,7 +164,7 @@ export class PortfolioService {
     
     return {
       currentValue: portfolio.totalValue,
-      startValue: 1000000, // Initial capital
+      startValue: 10000000, // Initial capital
       absoluteReturn: portfolio.totalProfitLoss,
       percentReturn: portfolio.totalProfitLossPercent,
       period,
@@ -178,7 +178,7 @@ export class PortfolioService {
     // For now, we'll generate mock data
     const days = period === '1W' ? 7 : period === '1M' ? 30 : 90;
     const history = [];
-    const baseValue = 1000000;
+    const baseValue = 10000000;
     
     for (let i = days; i >= 0; i--) {
       const date = new Date();

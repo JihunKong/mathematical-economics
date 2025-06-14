@@ -4,6 +4,7 @@ import { prisma } from './config/database';
 import { patchBigIntJSON } from './middleware/bigintSerializer';
 import { startStockPriceUpdater } from './jobs/stockPriceUpdater';
 import { getStockPriceCollector } from './jobs/stockPriceCollector';
+import { stockDataUpdater } from './utils/stockDataUpdater';
 import { Server } from 'http';
 
 // Patch BigInt JSON serialization globally
@@ -28,6 +29,10 @@ const startServer = async () => {
       // Start cron jobs for stock price updates
       if (process.env.ENABLE_STOCK_UPDATER === 'true') {
         startStockPriceUpdater();
+        
+        // Start new stock data updater
+        stockDataUpdater.start();
+        logger.info('Stock data updater service started');
       }
       
       // Start stock price collector for tracked stocks
@@ -42,6 +47,9 @@ const startServer = async () => {
       server.close(() => {
         logger.info('HTTP server closed');
       });
+      
+      // Stop stock data updater
+      stockDataUpdater.stop();
       
       await prisma.$disconnect();
       logger.info('Database connection closed');

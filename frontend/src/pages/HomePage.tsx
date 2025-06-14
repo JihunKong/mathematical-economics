@@ -73,7 +73,7 @@ export default function HomePage() {
               <svg className="w-6 h-6 text-primary-600 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
-              <span>100만원의 가상 자금으로 시작하는 모의 투자</span>
+              <span>1000만원의 가상 자금으로 시작하는 모의 투자</span>
             </li>
             <li className="flex items-start">
               <svg className="w-6 h-6 text-primary-600 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">

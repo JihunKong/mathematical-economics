@@ -1,8 +1,14 @@
 import { prisma } from '../config/database';
 import { AppError } from '../middleware/errorHandler';
 import { StockData, ChartData } from '../types/stock.types';
+import { StockDataService } from './stockDataService';
 
 export class StockService {
+  private stockDataService: StockDataService;
+
+  constructor() {
+    this.stockDataService = new StockDataService();
+  }
   async getAllStocks(userId: string, market?: string) {
     // Get user's class
     const user = await prisma.user.findUnique({
@@ -35,7 +41,26 @@ export class StockService {
       take: 100, // Limit to top 100 stocks
     });
 
-    return stocks.map(stock => this.formatStockData(stock));
+    // 실시간 가격 데이터로 업데이트
+    const stocksWithRealTimeData = await Promise.all(
+      stocks.map(async (stock) => {
+        const realtimeData = await this.stockDataService.getStockPrice(stock.symbol);
+        if (realtimeData) {
+          return {
+            ...stock,
+            currentPrice: realtimeData.currentPrice,
+            previousClose: realtimeData.previousClose,
+            dayOpen: realtimeData.dayOpen,
+            dayHigh: realtimeData.dayHigh,
+            dayLow: realtimeData.dayLow,
+            volume: BigInt(realtimeData.volume),
+          };
+        }
+        return stock;
+      })
+    );
+
+    return stocksWithRealTimeData.map(stock => this.formatStockData(stock));
   }
 
   async searchStocks(userId: string, query: string, market?: string) {
@@ -106,97 +131,25 @@ export class StockService {
       throw new AppError('Stock not found', 404);
     }
 
-    // Calculate date range based on period
-    const endDate = new Date();
-    const startDate = new Date();
-    
-    switch (period) {
-      case '1D':
-        startDate.setDate(startDate.getDate() - 1);
-        break;
-      case '1W':
-        startDate.setDate(startDate.getDate() - 7);
-        break;
-      case '1M':
-        startDate.setMonth(startDate.getMonth() - 1);
-        break;
-      case '3M':
-        startDate.setMonth(startDate.getMonth() - 3);
-        break;
-      case '6M':
-        startDate.setMonth(startDate.getMonth() - 6);
-        break;
-      case '1Y':
-        startDate.setFullYear(startDate.getFullYear() - 1);
-        break;
-      default:
-        startDate.setMonth(startDate.getMonth() - 1);
-    }
+    // stockDataService를 사용하여 과거 데이터 가져오기
+    const historicalData = await this.stockDataService.getHistoricalData(
+      symbol,
+      period as '1D' | '1W' | '1M' | '3M' | '6M' | '1Y'
+    );
 
-    // First try PriceHistory table (daily data)
-    const priceHistory = await prisma.priceHistory.findMany({
-      where: {
-        stockId: stock.id,
-        date: {
-          gte: startDate,
-          lte: endDate,
-        },
-      },
-      orderBy: { date: 'asc' },
-    });
-
-    if (priceHistory.length > 0) {
-      return priceHistory.map(item => ({
+    if (historicalData.length > 0) {
+      return historicalData.map(item => ({
         date: item.date,
         open: item.open,
         high: item.high,
         low: item.low,
         close: item.close,
-        volume: item.volume,
+        volume: BigInt(item.volume),
       }));
     }
 
-    // If no PriceHistory data, use StockPriceHistory for recent data
-    const stockPriceHistory = await prisma.stockPriceHistory.findMany({
-      where: {
-        symbol: symbol.toUpperCase(),
-        timestamp: {
-          gte: startDate,
-          lte: endDate,
-        },
-      },
-      orderBy: { timestamp: 'asc' },
-    });
-
-    // Group by day for chart data
-    const dailyData = new Map<string, ChartData>();
-    
-    stockPriceHistory.forEach(item => {
-      const dateKey = item.timestamp.toISOString().split('T')[0];
-      
-      if (!dailyData.has(dateKey)) {
-        dailyData.set(dateKey, {
-          date: new Date(dateKey),
-          open: item.dayOpen || item.currentPrice,
-          high: item.dayHigh || item.currentPrice,
-          low: item.dayLow || item.currentPrice,
-          close: item.currentPrice,
-          volume: BigInt(item.volume),
-        });
-      } else {
-        const existing = dailyData.get(dateKey)!;
-        dailyData.set(dateKey, {
-          date: existing.date,
-          open: existing.open,
-          high: Math.max(existing.high, item.dayHigh || item.currentPrice),
-          low: Math.min(existing.low, item.dayLow || item.currentPrice),
-          close: item.currentPrice, // Use the latest price as close
-          volume: existing.volume + BigInt(item.volume),
-        });
-      }
-    });
-
-    return Array.from(dailyData.values()).sort((a, b) => a.date.getTime() - b.date.getTime());
+    // 데이터가 없는 경우 빈 배열 반환
+    return [];
   }
 
   async updateStockPrice(symbol: string, priceData: Partial<StockData>) {

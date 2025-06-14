@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, Navigate } from 'react-router-dom';
 import { useAppSelector } from '@/hooks/useRedux';
 import api from '@/services/api';
+import stockService, { StockPrice } from '@/services/stockService';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 import StockChart from '@/components/stock/StockChart';
-import { TrendingUp, TrendingDown, RefreshCw, ArrowLeft, Newspaper, DollarSign } from 'lucide-react';
+import { TrendingUp, TrendingDown, RefreshCw, ArrowLeft, Newspaper, DollarSign, Activity } from 'lucide-react';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
 
@@ -23,6 +24,8 @@ interface Stock {
   eps: number | null;
   marketCap: string | null;
   updatedAt: string;
+  sector?: string;
+  description?: string;
 }
 
 interface OrderbookItem {
@@ -46,11 +49,13 @@ export default function StockDetailPage() {
   const { user } = useAppSelector((state) => state.auth);
   const { symbol } = useParams<{ symbol: string }>();
   const [stock, setStock] = useState<Stock | null>(null);
+  const [realtimePrice, setRealtimePrice] = useState<StockPrice | null>(null);
   const [orderbook, setOrderbook] = useState<Orderbook | null>(null);
   const [news, setNews] = useState<StockNews[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<'chart' | 'orderbook' | 'news' | 'financial'>('chart');
+  const [autoRefresh, setAutoRefresh] = useState(false);
 
   // Redirect admin users to admin page
   if (user?.role === 'ADMIN') {
@@ -65,10 +70,30 @@ export default function StockDetailPage() {
     }
   }, [symbol]);
 
+  // 실시간 가격 업데이트
+  useEffect(() => {
+    if (!symbol || !autoRefresh) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const price = await stockService.getRealtimePrice(symbol);
+        setRealtimePrice(price);
+      } catch (error) {
+        console.error('Failed to fetch realtime price:', error);
+      }
+    }, 5000); // 5초마다 업데이트
+
+    return () => clearInterval(interval);
+  }, [symbol, autoRefresh]);
+
   const fetchStockData = async () => {
     try {
-      const response = await api.get(`/real-stocks/${symbol}/price`);
-      setStock(response.data.data);
+      const [stockResponse, priceData] = await Promise.all([
+        api.get(`/real-stocks/${symbol}/price`),
+        stockService.getRealtimePrice(symbol!)
+      ]);
+      setStock(stockResponse.data.data);
+      setRealtimePrice(priceData);
     } catch (error) {
       console.error('Failed to fetch stock data:', error);
       toast.error('주식 정보를 불러오는데 실패했습니다');
@@ -95,12 +120,21 @@ export default function StockDetailPage() {
     }
   };
 
-  const handleRefresh = async () => {
+  const handleRefresh = useCallback(async () => {
     setRefreshing(true);
-    await Promise.all([fetchStockData(), fetchOrderbook()]);
-    setRefreshing(false);
-    toast.success('가격 정보가 업데이트되었습니다');
-  };
+    try {
+      await Promise.all([
+        fetchStockData(),
+        fetchOrderbook(),
+        symbol ? stockService.getRealtimePrice(symbol).then(setRealtimePrice) : null
+      ]);
+      toast.success('가격 정보가 업데이트되었습니다');
+    } catch (error) {
+      toast.error('업데이트에 실패했습니다');
+    } finally {
+      setRefreshing(false);
+    }
+  }, [symbol]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('ko-KR', {
@@ -126,7 +160,9 @@ export default function StockDetailPage() {
   if (loading) return <LoadingSpinner />;
   if (!stock) return <div>주식 정보를 찾을 수 없습니다.</div>;
 
-  const priceChange = stock.currentPrice - stock.previousClose;
+  // 실시간 가격이 있으면 사용, 없으면 기본 가격 사용
+  const currentPrice = realtimePrice?.currentPrice || stock.currentPrice;
+  const priceChange = currentPrice - stock.previousClose;
   const priceChangePercent = (priceChange / stock.previousClose) * 100;
 
   return (
@@ -142,23 +178,36 @@ export default function StockDetailPage() {
             <div>
               <h1 className="text-2xl font-bold mb-1">{stock.name}</h1>
               <p className="text-gray-500">{stock.symbol} · {stock.market}</p>
+              {stock.sector && <p className="text-sm text-gray-500 mt-1">{stock.sector}</p>}
             </div>
-            <button
-              onClick={handleRefresh}
-              disabled={refreshing}
-              className={clsx(
-                'p-2 rounded-lg transition-colors',
-                refreshing ? 'bg-gray-100' : 'bg-gray-100 hover:bg-gray-200'
-              )}
-            >
-              <RefreshCw className={clsx('w-5 h-5', refreshing && 'animate-spin')} />
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setAutoRefresh(!autoRefresh)}
+                className={clsx(
+                  'p-2 rounded-lg transition-colors',
+                  autoRefresh ? 'bg-primary-100 text-primary-600' : 'bg-gray-100 hover:bg-gray-200'
+                )}
+                title={autoRefresh ? '자동 새로고침 켜짐' : '자동 새로고침 꺼짐'}
+              >
+                <Activity className="w-5 h-5" />
+              </button>
+              <button
+                onClick={handleRefresh}
+                disabled={refreshing}
+                className={clsx(
+                  'p-2 rounded-lg transition-colors',
+                  refreshing ? 'bg-gray-100' : 'bg-gray-100 hover:bg-gray-200'
+                )}
+              >
+                <RefreshCw className={clsx('w-5 h-5', refreshing && 'animate-spin')} />
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <div className="flex items-baseline gap-4 mb-4">
-                <span className="text-3xl font-bold">{formatCurrency(stock.currentPrice)}</span>
+                <span className="text-3xl font-bold">{formatCurrency(currentPrice)}</span>
                 <div className={clsx(
                   'flex items-center gap-1',
                   priceChange >= 0 ? 'text-red-600' : 'text-blue-600'
@@ -261,7 +310,12 @@ export default function StockDetailPage() {
 
         <div className="p-6">
           {activeTab === 'chart' && symbol && (
-            <StockChart symbol={symbol} />
+            <StockChart 
+              symbol={symbol} 
+              autoRefresh={autoRefresh}
+              refreshInterval={10000}
+              height={500}
+            />
           )}
 
           {activeTab === 'orderbook' && orderbook && (

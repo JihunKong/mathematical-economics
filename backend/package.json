@@ -13,30 +13,33 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
-    "prisma:seed": "ts-node prisma/seed.ts"
+    "prisma:seed": "ts-node prisma/seed.ts",
+    "import:stocks": "ts-node scripts/importStocks.ts"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.8.0",
+    "axios": "^1.6.5",
     "bcrypt": "^5.1.1",
     "cheerio": "^1.0.0-rc.12",
     "cors": "^2.8.5",
+    "csv-parser": "^3.2.0",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "express-rate-limit": "^7.1.5",
     "express-validator": "^7.0.1",
     "helmet": "^7.1.0",
+    "iconv-lite": "^0.6.3",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
-    "yahoo-finance2": "^2.11.3",
+    "node-cron": "^3.0.3",
+    "puppeteer": "^21.7.0",
     "redis": "^4.6.12",
     "socket.io": "^4.6.0",
     "winston": "^3.11.0",
-    "axios": "^1.6.5",
-    "puppeteer": "^21.7.0",
-    "node-cron": "^3.0.3"
+    "yahoo-finance2": "^2.11.3"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",

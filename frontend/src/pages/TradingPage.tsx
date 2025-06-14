@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAppSelector } from '@/hooks/useRedux';
 import api from '@/services/api';
+import stockService, { StockPrice } from '@/services/stockService';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 import toast from 'react-hot-toast';
-import { Search, TrendingUp, TrendingDown, Info, RefreshCw } from 'lucide-react';
+import { Search, TrendingUp, TrendingDown, Info, RefreshCw, Activity } from 'lucide-react';
 import clsx from 'clsx';
 
 interface Stock {
@@ -16,6 +17,9 @@ interface Stock {
   previousClose: number;
   change: number;
   changePercent: number;
+  volume?: number;
+  high?: number;
+  low?: number;
 }
 
 interface Holding {
@@ -30,6 +34,7 @@ interface Holding {
 export default function TradingPage() {
   const { user } = useAppSelector((state) => state.auth);
   const [stocks, setStocks] = useState<Stock[]>([]);
+  const [realtimePrices, setRealtimePrices] = useState<Map<string, StockPrice>>(new Map());
   const [holdings, setHoldings] = useState<Holding[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -40,6 +45,8 @@ export default function TradingPage() {
   const [currentCash, setCurrentCash] = useState(0);
   const [showTradeModal, setShowTradeModal] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [autoRefresh, setAutoRefresh] = useState(false);
+  const [selectedMarket, setSelectedMarket] = useState<'all' | 'KOSPI' | 'KOSDAQ'>('all');
 
   // Redirect admin users to admin page
   if (user && user.role === 'ADMIN') {
@@ -50,8 +57,35 @@ export default function TradingPage() {
     fetchData();
   }, []);
 
-  const fetchData = async () => {
+  // 실시간 가격 업데이트
+  useEffect(() => {
+    if (!autoRefresh || stocks.length === 0) return;
+
+    const updatePrices = async () => {
+      try {
+        // 현재 표시되는 주식들의 심볼만 추출
+        const visibleSymbols = filteredStocks.slice(0, 20).map(s => s.symbol);
+        const prices = await stockService.getBatchPrices(visibleSymbols);
+        
+        const priceMap = new Map<string, StockPrice>();
+        prices.forEach(price => {
+          priceMap.set(price.symbol, price);
+        });
+        setRealtimePrices(priceMap);
+      } catch (error) {
+        console.error('Failed to update prices:', error);
+      }
+    };
+
+    updatePrices();
+    const interval = setInterval(updatePrices, 10000); // 10초마다 업데이트
+
+    return () => clearInterval(interval);
+  }, [autoRefresh, stocks, searchQuery, selectedMarket]);
+
+  const fetchData = useCallback(async () => {
     try {
+      setRefreshing(true);
       const [stocksRes, holdingsRes, portfolioRes] = await Promise.all([
         api.getStocks(),
         api.getHoldings(),
@@ -61,13 +95,25 @@ export default function TradingPage() {
       setStocks(stocksRes.data);
       setHoldings(holdingsRes.data);
       setCurrentCash(portfolioRes.data.cash);
+
+      // 초기 실시간 가격 로드
+      if (stocksRes.data.length > 0) {
+        const symbols = stocksRes.data.slice(0, 20).map((s: Stock) => s.symbol);
+        const prices = await stockService.getBatchPrices(symbols);
+        const priceMap = new Map<string, StockPrice>();
+        prices.forEach(price => {
+          priceMap.set(price.symbol, price);
+        });
+        setRealtimePrices(priceMap);
+      }
     } catch (error) {
       console.error('Failed to fetch data:', error);
       toast.error('데이터를 불러오는데 실패했습니다');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
-  };
+  }, []);
 
   const handleTrade = async () => {
     if (!selectedStock || !quantity || parseInt(quantity) <= 0) {
@@ -120,10 +166,14 @@ export default function TradingPage() {
     }
   };
 
-  const filteredStocks = stocks.filter(stock => 
-    stock.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    stock.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredStocks = useMemo(() => {
+    return stocks
+      .filter(stock => 
+        (selectedMarket === 'all' || stock.market === selectedMarket) &&
+        (stock.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
+         stock.name.toLowerCase().includes(searchQuery.toLowerCase()))
+      );
+  }, [stocks, searchQuery, selectedMarket]);
 
   const getHoldingQuantity = (symbol: string) => {
     const holding = holdings.find(h => h.symbol === symbol);
@@ -144,34 +194,95 @@ export default function TradingPage() {
       <div className="mb-6">
         <div className="flex justify-between items-center mb-2">
           <h1 className="text-2xl font-bold">주식 거래</h1>
-          {(user?.role === 'TEACHER' || user?.role === 'ADMIN') && (
+          <div className="flex items-center gap-2">
             <button
-              onClick={handleRefreshPrices}
+              onClick={() => setAutoRefresh(!autoRefresh)}
+              className={clsx(
+                'flex items-center gap-2 px-3 py-2 rounded-lg transition-colors',
+                autoRefresh ? 'bg-primary-100 text-primary-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              )}
+              title={autoRefresh ? '자동 새로고침 켜짐' : '자동 새로고침 꺼짐'}
+            >
+              <Activity className="w-4 h-4" />
+              <span className="text-sm">자동 갱신</span>
+            </button>
+            <button
+              onClick={fetchData}
               disabled={refreshing}
               className={clsx(
-                'flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors',
+                'flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors',
                 refreshing && 'opacity-50 cursor-not-allowed'
               )}
             >
               <RefreshCw className={clsx('w-4 h-4', refreshing && 'animate-spin')} />
-              {refreshing ? '업데이트 중...' : '실시간 가격 업데이트'}
+              <span className="text-sm">새로고침</span>
             </button>
-          )}
+            {(user?.role === 'TEACHER' || user?.role === 'ADMIN') && (
+              <button
+                onClick={handleRefreshPrices}
+                disabled={refreshing}
+                className={clsx(
+                  'flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors',
+                  refreshing && 'opacity-50 cursor-not-allowed'
+                )}
+              >
+                <RefreshCw className={clsx('w-4 h-4', refreshing && 'animate-spin')} />
+                {refreshing ? '업데이트 중...' : '실시간 가격 업데이트'}
+              </button>
+            )}
+          </div>
         </div>
         <p className="text-gray-600">보유 현금: {formatCurrency(currentCash)}</p>
       </div>
 
-      {/* Search Bar */}
-      <div className="mb-6">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="종목명 또는 코드 검색..."
-            className="input pl-10 w-full"
-          />
+      {/* Search Bar and Filters */}
+      <div className="mb-6 space-y-4">
+        <div className="flex gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="종목명 또는 코드 검색..."
+              className="input pl-10 w-full"
+            />
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setSelectedMarket('all')}
+              className={clsx(
+                'px-4 py-2 rounded-lg font-medium transition-colors',
+                selectedMarket === 'all' 
+                  ? 'bg-primary-600 text-white' 
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              )}
+            >
+              전체
+            </button>
+            <button
+              onClick={() => setSelectedMarket('KOSPI')}
+              className={clsx(
+                'px-4 py-2 rounded-lg font-medium transition-colors',
+                selectedMarket === 'KOSPI' 
+                  ? 'bg-primary-600 text-white' 
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              )}
+            >
+              코스피
+            </button>
+            <button
+              onClick={() => setSelectedMarket('KOSDAQ')}
+              className={clsx(
+                'px-4 py-2 rounded-lg font-medium transition-colors',
+                selectedMarket === 'KOSDAQ' 
+                  ? 'bg-primary-600 text-white' 
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              )}
+            >
+              코스닥
+            </button>
+          </div>
         </div>
       </div>
 
@@ -216,20 +327,50 @@ export default function TradingPage() {
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {formatCurrency(stock.currentPrice)}
+                  {(() => {
+                    const realtimePrice = realtimePrices.get(stock.symbol);
+                    const displayPrice = realtimePrice?.currentPrice || stock.currentPrice;
+                    return (
+                      <div>
+                        <div className="font-medium">{formatCurrency(displayPrice)}</div>
+                        {realtimePrice && realtimePrice.timestamp && (
+                          <div className="text-xs text-gray-500">
+                            {new Date(realtimePrice.timestamp).toLocaleTimeString('ko-KR', { 
+                              hour: '2-digit', 
+                              minute: '2-digit', 
+                              second: '2-digit' 
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className={clsx(
-                    'flex items-center text-sm font-medium',
-                    stock.changePercent >= 0 ? 'text-red-600' : 'text-blue-600'
-                  )}>
-                    {stock.changePercent >= 0 ? (
-                      <TrendingUp className="w-4 h-4 mr-1" />
-                    ) : (
-                      <TrendingDown className="w-4 h-4 mr-1" />
-                    )}
-                    {Math.abs(stock.changePercent).toFixed(2)}%
-                  </div>
+                  {(() => {
+                    const realtimePrice = realtimePrices.get(stock.symbol);
+                    const changePercent = realtimePrice?.changePercent ?? stock.changePercent;
+                    const changeAmount = realtimePrice?.changeAmount ?? stock.change;
+                    
+                    return (
+                      <div className={clsx(
+                        'flex items-center text-sm font-medium',
+                        changePercent >= 0 ? 'text-red-600' : 'text-blue-600'
+                      )}>
+                        {changePercent >= 0 ? (
+                          <TrendingUp className="w-4 h-4 mr-1" />
+                        ) : (
+                          <TrendingDown className="w-4 h-4 mr-1" />
+                        )}
+                        <div>
+                          <div>{Math.abs(changePercent).toFixed(2)}%</div>
+                          <div className="text-xs">
+                            {changeAmount >= 0 ? '+' : ''}{changeAmount.toLocaleString()}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                   {getHoldingQuantity(stock.symbol)}주

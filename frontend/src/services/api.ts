@@ -95,12 +95,12 @@ class ApiService {
   }
 
   async getStockPrice(symbol: string) {
-    const response = await this.api.get(`/stocks/${symbol}/price`);
+    const response = await this.api.get(`/real-stocks/${symbol}/price`);
     return response.data;
   }
 
   async getStockChart(symbol: string, period: string) {
-    const response = await this.api.get(`/stocks/${symbol}/chart`, { params: { period } });
+    const response = await this.api.get(`/real-stocks/${symbol}/chart`, { params: { period } });
     return response.data;
   }
 

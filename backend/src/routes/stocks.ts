@@ -39,4 +39,26 @@ router.get(
   stockController.getStockChart
 );
 
+// 새로운 실시간 가격 조회 엔드포인트
+router.get(
+  '/:symbol/realtime',
+  stockValidators.getBySymbol,
+  validate,
+  stockController.getRealtimePrice
+);
+
+// 여러 종목 가격 일괄 조회
+router.post(
+  '/prices/multiple',
+  stockController.getMultiplePrices
+);
+
+// 과거 데이터 조회 (차트용)
+router.get(
+  '/:symbol/historical',
+  stockValidators.getBySymbol,
+  validate,
+  stockController.getHistoricalData
+);
+
 export default router;

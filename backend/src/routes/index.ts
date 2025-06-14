@@ -9,6 +9,7 @@ import teacherRoutes from './teacher';
 import realStockRoutes from './realStock';
 import adminRoutes from './admin';
 import stockManagementRoutes from './stockManagement';
+import stockDataRoutes from './stockData';
 
 const router = Router();
 
@@ -22,5 +23,6 @@ router.use('/teacher', teacherRoutes);
 router.use('/real-stocks', realStockRoutes);
 router.use('/admin', adminRoutes);
 router.use('/stock-management', stockManagementRoutes);
+router.use('/stock-data', stockDataRoutes);
 
 export default router;

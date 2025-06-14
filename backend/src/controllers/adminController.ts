@@ -64,7 +64,7 @@ export const approveUser = async (req: Request, res: Response, next: NextFunctio
     await prisma.portfolio.create({
       data: {
         userId: userId,
-        totalValue: updatedUser.role === UserRole.STUDENT ? 1000000 : 0,
+        totalValue: updatedUser.role === UserRole.STUDENT ? 10000000 : 0,
         totalCost: 0,
         totalProfitLoss: 0,
         totalProfitLossPercent: 0,
