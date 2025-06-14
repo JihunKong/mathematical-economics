@@ -43,15 +43,19 @@ export const approveUser = async (req: Request, res: Response, next: NextFunctio
       throw new AppError('Invalid role. Must be STUDENT or TEACHER', 400);
     }
 
-    // Update user role
+    // Update user role and activate
     const updatedUser = await prisma.user.update({
       where: { id: userId },
-      data: { role: role as UserRole },
+      data: { 
+        role: role as UserRole,
+        isActive: true // Activate the user
+      },
       select: {
         id: true,
         email: true,
         name: true,
         role: true,
+        isActive: true,
         updatedAt: true,
       },
     });

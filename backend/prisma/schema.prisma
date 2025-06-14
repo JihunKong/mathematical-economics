@@ -15,8 +15,8 @@ model User {
   email            String         @unique
   password         String
   name             String
-  role             UserRole       @default(GUEST)
-  isActive         Boolean        @default(true)
+  role             UserRole       @default(STUDENT)
+  isActive         Boolean        @default(false) // Requires admin approval
   initialCapital   Float          @default(1000000) // Starting with 1 million won
   currentCash      Float          @default(1000000)
   createdAt        DateTime       @default(now())
