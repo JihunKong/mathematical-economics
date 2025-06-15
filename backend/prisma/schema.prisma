@@ -25,6 +25,7 @@ model User {
   // Relations
   classId          String?
   class            Class?         @relation(fields: [classId], references: [id])
+  teacherClasses   Class[]        @relation("TeacherClasses")
   portfolios       Portfolio[]
   transactions     Transaction[]
   holdings         Holding[]
@@ -46,6 +47,7 @@ model Class {
   updatedAt        DateTime       @updatedAt
 
   // Relations
+  teacher          User           @relation("TeacherClasses", fields: [teacherId], references: [id])
   students         User[]
   allowedStocks    AllowedStock[]
   
