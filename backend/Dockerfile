@@ -82,4 +82,4 @@ USER nodejs
 EXPOSE 5001
 
 # Start the application with migrations and initialization
-CMD ["sh", "-c", "npx prisma migrate deploy && node scripts/initialize.js && node dist/server.js"]
+CMD ["sh", "-c", "npx prisma db push --accept-data-loss && node scripts/initialize.js && node dist/server.js"]

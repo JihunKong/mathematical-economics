@@ -20,11 +20,21 @@ export const authValidators = {
       .isIn(['STUDENT', 'TEACHER'])
       .withMessage('Role must be either STUDENT or TEACHER'),
     body('classCode')
-      .trim()
-      .notEmpty()
-      .withMessage('Class code is required')
-      .isLength({ min: 6, max: 10 })
-      .withMessage('Class code must be between 6 and 10 characters'),
+      .optional()
+      .custom((value, { req }) => {
+        // Class code is required for students, optional for teachers
+        if (req.body.role === 'TEACHER' || !req.body.role) {
+          return true; // Teachers don't need class code, and default role is STUDENT
+        }
+        // For students, class code is required
+        if (!value || value.trim().length === 0) {
+          throw new Error('Class code is required for students');
+        }
+        if (value.trim().length < 6 || value.trim().length > 10) {
+          throw new Error('Class code must be between 6 and 10 characters');
+        }
+        return true;
+      }),
   ],
   
   login: [

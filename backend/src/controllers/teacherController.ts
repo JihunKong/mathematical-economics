@@ -12,18 +12,42 @@ export const createClass = async (
   next: NextFunction
 ) => {
   try {
-    if (req.user?.role !== 'TEACHER') {
+    console.log('Creating class request:', {
+      user: req.user,
+      body: req.body,
+      headers: {
+        authorization: req.headers.authorization ? 'Present' : 'Missing'
+      }
+    });
+
+    if (!req.user) {
+      throw new AppError('User not authenticated', 401);
+    }
+
+    if (req.user.role !== 'TEACHER') {
       throw new AppError('Only teachers can create classes', 403);
     }
 
     const teacherId = req.user.id;
     const newClass = await teacherService.createClass(teacherId, req.body);
 
+    console.log('Class created successfully:', {
+      classId: newClass.id,
+      className: newClass.name,
+      classCode: newClass.code
+    });
+
     res.status(201).json({
       success: true,
       data: newClass,
     });
   } catch (error) {
+    console.error('Error creating class:', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      user: req.user,
+      body: req.body
+    });
     next(error);
   }
 };

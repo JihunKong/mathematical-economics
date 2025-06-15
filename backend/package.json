@@ -14,7 +14,8 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
     "prisma:seed": "ts-node prisma/seed.ts",
-    "import:stocks": "ts-node scripts/importStocks.ts"
+    "import:stocks": "ts-node scripts/importStocks.ts",
+    "create:teachers": "ts-node scripts/createTeacherAccount.ts"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
