@@ -24,8 +24,8 @@ export const createClass = async (
       throw new AppError('User not authenticated', 401);
     }
 
-    if (req.user.role !== 'TEACHER') {
-      throw new AppError('Only teachers can create classes', 403);
+    if (req.user.role !== 'TEACHER' && req.user.role !== 'ADMIN') {
+      throw new AppError('Only teachers and admins can create classes', 403);
     }
 
     const teacherId = req.user.id;
@@ -59,8 +59,8 @@ export const getTeacherClasses = async (
   next: NextFunction
 ) => {
   try {
-    if (req.user?.role !== 'TEACHER') {
-      throw new AppError('Only teachers can access this resource', 403);
+    if (req.user?.role !== 'TEACHER' && req.user?.role !== 'ADMIN') {
+      throw new AppError('Only teachers and admins can access this resource', 403);
     }
 
     const classes = await teacherService.getTeacherClasses(req.user.id);
@@ -81,8 +81,8 @@ export const getClassDetails = async (
   next: NextFunction
 ) => {
   try {
-    if (req.user?.role !== 'TEACHER') {
-      throw new AppError('Only teachers can access this resource', 403);
+    if (req.user?.role !== 'TEACHER' && req.user?.role !== 'ADMIN') {
+      throw new AppError('Only teachers and admins can access this resource', 403);
     }
 
     const { classId } = req.params;
@@ -104,8 +104,8 @@ export const updateAllowedStocks = async (
   next: NextFunction
 ) => {
   try {
-    if (req.user?.role !== 'TEACHER') {
-      throw new AppError('Only teachers can manage allowed stocks', 403);
+    if (req.user?.role !== 'TEACHER' && req.user?.role !== 'ADMIN') {
+      throw new AppError('Only teachers and admins can manage allowed stocks', 403);
     }
 
     const { classId } = req.params;
@@ -137,8 +137,8 @@ export const getStudentActivity = async (
   next: NextFunction
 ) => {
   try {
-    if (req.user?.role !== 'TEACHER') {
-      throw new AppError('Only teachers can view student activity', 403);
+    if (req.user?.role !== 'TEACHER' && req.user?.role !== 'ADMIN') {
+      throw new AppError('Only teachers and admins can view student activity', 403);
     }
 
     const { studentId } = req.params;
@@ -160,8 +160,8 @@ export const getClassStatistics = async (
   next: NextFunction
 ) => {
   try {
-    if (req.user?.role !== 'TEACHER') {
-      throw new AppError('Only teachers can view class statistics', 403);
+    if (req.user?.role !== 'TEACHER' && req.user?.role !== 'ADMIN') {
+      throw new AppError('Only teachers and admins can view class statistics', 403);
     }
 
     const { classId } = req.params;
@@ -183,8 +183,8 @@ export const updateStudentCash = async (
   next: NextFunction
 ) => {
   try {
-    if (req.user?.role !== 'TEACHER') {
-      throw new AppError('Only teachers can update student cash', 403);
+    if (req.user?.role !== 'TEACHER' && req.user?.role !== 'ADMIN') {
+      throw new AppError('Only teachers and admins can update student cash', 403);
     }
 
     const { studentId } = req.params;

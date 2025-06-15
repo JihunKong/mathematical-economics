@@ -6,6 +6,7 @@ import UpdateCashModal from '@/components/teacher/UpdateCashModal';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
 import { DollarSign } from 'lucide-react';
+import { formatCurrency, formatPercent } from '@/utils/formatters';
 
 interface Student {
   id: string;
