@@ -15,10 +15,19 @@
     "test:backend": "cd backend && npm test",
     "test:frontend": "cd frontend && npm test"
   },
-  "keywords": ["education", "stock", "trading", "mathematics", "economics"],
+  "keywords": [
+    "education",
+    "stock",
+    "trading",
+    "mathematics",
+    "economics"
+  ],
   "author": "Jihun Kong",
   "license": "MIT",
   "devDependencies": {
     "concurrently": "^8.2.2"
+  },
+  "dependencies": {
+    "playwright": "^1.53.0"
   }
 }

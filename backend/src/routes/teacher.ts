@@ -6,9 +6,9 @@ import * as teacherController from '../controllers/teacherController';
 
 const router = Router();
 
-// All teacher routes require authentication and teacher role
+// All teacher routes require authentication and teacher or admin role
 router.use(authenticate);
-router.use(authorize('TEACHER'));
+router.use(authorize('TEACHER', 'ADMIN'));
 
 // Class management
 router.post(

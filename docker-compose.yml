@@ -9,7 +9,7 @@ services:
       POSTGRES_USER: mathuser
       POSTGRES_PASSWORD: mathpass123
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -22,7 +22,7 @@ services:
     image: redis:7-alpine
     container_name: economic-math-stock-redis
     ports:
-      - "6379:6379"
+      - "6380:6379"
     volumes:
       - redis_data:/data
     healthcheck:
@@ -34,39 +34,42 @@ services:
   backend:
     build:
       context: ./backend
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
     container_name: economic-math-stock-backend
     environment:
-      NODE_ENV: production
+      NODE_ENV: development
       DATABASE_URL: postgresql://mathuser:mathpass123@postgres:5432/mathematical_economics
       REDIS_URL: redis://redis:6379
       JWT_SECRET: ${JWT_SECRET:-your-jwt-secret-key-here}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-your-jwt-refresh-secret-key-here}
       PORT: 5001
+      CORS_ORIGIN: http://localhost:3002,http://localhost:5173
     ports:
-      - "5001:5001"
+      - "5002:5001"
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
     volumes:
-      - ./backend/scripts:/app/scripts
-      - ./backend/.env:/app/.env
+      - ./backend:/app
+      - /app/node_modules
 
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile
-      args:
-        VITE_API_URL: ${VITE_API_URL:-http://localhost:3000/api}
-    container_name: economic-math-stock-frontend
+      dockerfile: Dockerfile.dev
+    container_name: economic-math-stock-frontend-dev
     environment:
-      NODE_ENV: production
+      NODE_ENV: development
+      VITE_API_URL: http://localhost:5002/api
     ports:
-      - "3000:80"
+      - "3002:5173"
     depends_on:
       - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
 
 volumes:
   postgres_data:
