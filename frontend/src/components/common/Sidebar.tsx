@@ -82,9 +82,9 @@ export default function Sidebar() {
 
   let allMenuItems = [...menuItems];
   
-  // Admin users only see admin menu
+  // Admin users can see all menus including teacher menu
   if (isAdmin) {
-    allMenuItems = adminMenuItems;
+    allMenuItems = [...menuItems, ...teacherMenuItems, ...adminMenuItems];
   } else {
     // Non-admin users see regular menus
     if (isTeacher) {
