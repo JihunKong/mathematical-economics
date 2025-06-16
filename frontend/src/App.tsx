@@ -21,6 +21,7 @@ import LeaderboardPage from './pages/LeaderboardPage';
 import StockDetailPage from './pages/StockDetailPage';
 import AdminPage from './pages/AdminPage';
 import StockManagement from './pages/StockManagement';
+import StockManagementEnhanced from './pages/StockManagementEnhanced';
 
 // Protected Route Component
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -100,7 +101,7 @@ function App() {
             path="stock-management"
             element={
               <ProtectedRoute>
-                <StockManagement />
+                <StockManagementEnhanced />
               </ProtectedRoute>
             }
           />
