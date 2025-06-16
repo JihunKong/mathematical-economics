@@ -85,8 +85,8 @@ export default function Sidebar() {
   
   // Role-based menu display
   if (isAdmin) {
-    // Admin can see all menus
-    allMenuItems = [...menuItems, ...teacherMenuItems, ...adminMenuItems];
+    // Admin only sees admin-specific menus
+    allMenuItems = [...adminMenuItems];
   } else if (isTeacher) {
     // Teacher only sees teacher-specific menus
     allMenuItems = [...teacherMenuItems];
@@ -127,7 +127,7 @@ export default function Sidebar() {
           ))}
         </nav>
 
-        {!isAdmin && (
+        {isStudent && (
           <div className="mt-auto pt-4 border-t border-gray-200">
             <div className="px-2 py-3 bg-gray-50 rounded-lg">
               <p className="text-sm font-medium text-gray-700">보유 현금</p>

@@ -37,7 +37,7 @@ export default function Header() {
               </button>
             )}
             <Link to="/" className="flex items-center ml-4 lg:ml-0">
-              <h1 className="text-xl font-bold text-primary-600">경제수학 주식거래</h1>
+              <h1 className="text-xl font-bold text-primary-600">경제교실.com</h1>
             </Link>
           </div>
 
