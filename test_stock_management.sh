@@ -49,6 +49,6 @@ echo "Toggle tracking response: $TOGGLE_RESPONSE"
 
 echo -e "\n${YELLOW}6. Check database stock count${NC}"
 echo "Run on EC2:"
-echo "sudo docker compose -f docker-compose.prod.yml exec postgres psql -U matheconomy -d economic_math_stock_db -c \"SELECT COUNT(*) as total, COUNT(CASE WHEN \\\"isTracked\\\" = true THEN 1 END) as tracked FROM \\\"Stock\\\";\""
+echo "sudo docker compose -f docker-compose.prod.yml exec postgres psql -U postgres -d economic_math_stock_db -c \"SELECT COUNT(*) as total, COUNT(CASE WHEN \\\"isTracked\\\" = true THEN 1 END) as tracked FROM \\\"Stock\\\";\""
 
 echo -e "\n${GREEN}✅ Stock management API is working if all tests passed${NC}"

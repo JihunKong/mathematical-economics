@@ -69,8 +69,8 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: /api
-        VITE_SOCKET_URL: /
+        - VITE_API_URL=/api
+        - VITE_SOCKET_URL=/
     container_name: economic-math-stock-frontend
     env_file:
       - ./frontend/.env.production
