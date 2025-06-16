@@ -18,7 +18,10 @@ export class TradingService {
     return await prisma.$transaction(async (tx) => {
       // Get user and stock
       const [user, stock] = await Promise.all([
-        tx.user.findUnique({ where: { id: userId } }),
+        tx.user.findUnique({ 
+          where: { id: userId },
+          include: { class: true }
+        }),
         tx.stock.findUnique({ where: { symbol: symbol.toUpperCase() } }),
       ]);
 
@@ -28,6 +31,21 @@ export class TradingService {
 
       if (!stock) {
         throw new AppError('Stock not found', 404);
+      }
+
+      // Check if student is allowed to trade this stock
+      if (user.role === 'STUDENT' && user.classId) {
+        const allowedStock = await tx.allowedStock.findFirst({
+          where: {
+            classId: user.classId,
+            stockId: stock.id,
+            isActive: true
+          }
+        });
+
+        if (!allowedStock) {
+          throw new AppError('이 종목은 거래가 허용되지 않았습니다', 403);
+        }
       }
 
       // Calculate total cost
@@ -119,7 +137,10 @@ export class TradingService {
     return await prisma.$transaction(async (tx) => {
       // Get user, stock, and holding
       const [user, stock] = await Promise.all([
-        tx.user.findUnique({ where: { id: userId } }),
+        tx.user.findUnique({ 
+          where: { id: userId },
+          include: { class: true }
+        }),
         tx.stock.findUnique({ where: { symbol: symbol.toUpperCase() } }),
       ]);
 
@@ -129,6 +150,21 @@ export class TradingService {
 
       if (!stock) {
         throw new AppError('Stock not found', 404);
+      }
+
+      // Check if student is allowed to trade this stock
+      if (user.role === 'STUDENT' && user.classId) {
+        const allowedStock = await tx.allowedStock.findFirst({
+          where: {
+            classId: user.classId,
+            stockId: stock.id,
+            isActive: true
+          }
+        });
+
+        if (!allowedStock) {
+          throw new AppError('이 종목은 거래가 허용되지 않았습니다', 403);
+        }
       }
 
       const holding = await tx.holding.findUnique({
