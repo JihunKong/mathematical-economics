@@ -72,12 +72,13 @@ export class PriceHistoryCollector {
           await prisma.stockPriceHistory.create({
             data: {
               stockId: stock.id,
+              symbol: stock.symbol,
               currentPrice: stock.currentPrice,
               previousClose: stock.previousClose,
-              dayOpen: stock.dayOpen,
-              dayHigh: stock.dayHigh,
-              dayLow: stock.dayLow,
-              volume: stock.volume,
+              dayOpen: stock.dayOpen || stock.currentPrice,
+              dayHigh: stock.dayHigh || stock.currentPrice,
+              dayLow: stock.dayLow || stock.currentPrice,
+              volume: stock.volume || BigInt(0),
               change: stock.change,
               changePercent: stock.changePercent,
               timestamp: new Date()

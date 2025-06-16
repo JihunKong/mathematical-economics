@@ -70,6 +70,8 @@ model Stock {
   dayLow           Float?
   volume           BigInt?
   marketCap        BigInt?
+  change           Float          @default(0)  // Price change amount
+  changePercent    Float          @default(0)  // Price change percentage
   per              Float?         // Price-to-Earnings Ratio
   eps              Float?         // Earnings Per Share
   isActive         Boolean        @default(true)  // Whether stock is available for trading
