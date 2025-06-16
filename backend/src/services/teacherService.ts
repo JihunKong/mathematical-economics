@@ -3,15 +3,32 @@ import { AppError } from '../middleware/errorHandler';
 
 export class TeacherService {
   // Create a new class
-  async createClass(teacherId: string, data: { name: string; startDate: Date; endDate?: Date }) {
+  async createClass(teacherId: string, data: { name: string; startDate: Date | string; endDate?: Date | string }) {
     // Generate unique class code
     const code = await this.generateClassCode();
     
+    // Ensure dates are properly formatted
+    const formatDate = (date: Date | string): Date => {
+      if (typeof date === 'string') {
+        // If date string doesn't include time, add it
+        if (date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+          return new Date(date + 'T00:00:00.000Z');
+        }
+        return new Date(date);
+      }
+      return date;
+    };
+    
+    const startDate = formatDate(data.startDate);
+    const endDate = data.endDate ? formatDate(data.endDate) : undefined;
+    
     const newClass = await prisma.class.create({
       data: {
-        ...data,
+        name: data.name,
         code,
         teacherId,
+        startDate,
+        endDate,
       },
     });
 
