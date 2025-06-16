@@ -3,18 +3,14 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files and config files
+# Copy package files
 COPY package*.json ./
-COPY tsconfig*.json ./
-COPY vite.config.ts ./
-COPY index.html ./
 
 # Install dependencies
 RUN npm ci
 
-# Copy source code
-COPY src ./src
-COPY public ./public
+# Copy all source files (dockerignore will exclude unnecessary files)
+COPY . .
 
 # Build arguments
 ARG VITE_API_URL
