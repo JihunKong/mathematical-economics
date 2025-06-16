@@ -40,6 +40,9 @@ const portfolioSlice = createSlice({
     fetchPortfolioSuccess: (_state, action: PayloadAction<Omit<PortfolioState, 'isLoading'>>) => {
       return { ...action.payload, isLoading: false };
     },
+    updateCash: (state, action: PayloadAction<number>) => {
+      state.cash = action.payload;
+    },
     updateHoldingPrice: (state, action: PayloadAction<{ symbol: string; currentPrice: number }>) => {
       const holding = state.holdings.find(h => h.symbol === action.payload.symbol);
       if (holding) {
@@ -98,5 +101,5 @@ const portfolioSlice = createSlice({
   },
 });
 
-export const { fetchPortfolioStart, fetchPortfolioSuccess, updateHoldingPrice, executeTrade } = portfolioSlice.actions;
+export const { fetchPortfolioStart, fetchPortfolioSuccess, updateCash, updateHoldingPrice, executeTrade } = portfolioSlice.actions;
 export default portfolioSlice.reducer;

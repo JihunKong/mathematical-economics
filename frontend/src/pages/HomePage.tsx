@@ -1,8 +1,19 @@
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { useAppSelector } from '@/hooks/useRedux';
 
 export default function HomePage() {
-  const { isAuthenticated } = useAppSelector((state) => state.auth);
+  const { isAuthenticated, user } = useAppSelector((state) => state.auth);
+  
+  // Redirect authenticated users to their appropriate dashboard
+  if (isAuthenticated && user) {
+    if (user.role === 'ADMIN') {
+      return <Navigate to="/admin" replace />;
+    } else if (user.role === 'TEACHER') {
+      return <Navigate to="/teacher" replace />;
+    } else {
+      return <Navigate to="/dashboard" replace />;
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-50 to-primary-100">

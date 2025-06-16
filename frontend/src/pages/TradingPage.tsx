@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link, Navigate } from 'react-router-dom';
-import { useAppSelector } from '@/hooks/useRedux';
+import { useAppSelector, useAppDispatch } from '@/hooks/useRedux';
+import { updateCash } from '@/store/portfolioSlice';
 import api from '@/services/api';
 import stockService, { StockPrice } from '@/services/stockService';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
@@ -33,6 +34,7 @@ interface Holding {
 
 export default function TradingPage() {
   const { user } = useAppSelector((state) => state.auth);
+  const dispatch = useAppDispatch();
   const [stocks, setStocks] = useState<Stock[]>([]);
   const [realtimePrices, setRealtimePrices] = useState<Map<string, StockPrice>>(new Map());
   const [holdings, setHoldings] = useState<Holding[]>([]);
@@ -95,6 +97,9 @@ export default function TradingPage() {
       setStocks(stocksRes.data);
       setHoldings(holdingsRes.data);
       setCurrentCash(portfolioRes.data.cash);
+      
+      // Redux store 업데이트
+      dispatch(updateCash(portfolioRes.data.cash));
 
       // 초기 실시간 가격 로드
       if (stocksRes.data.length > 0) {
@@ -113,7 +118,7 @@ export default function TradingPage() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [dispatch]);
 
   const handleTrade = async () => {
     if (!selectedStock || !quantity || parseInt(quantity) <= 0) {

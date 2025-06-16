@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useAppSelector } from '@/hooks/useRedux';
+import { useAppSelector, useAppDispatch } from '@/hooks/useRedux';
+import { updateCash } from '@/store/portfolioSlice';
 import api from '@/services/api';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 import RealtimePriceCard from '@/components/stock/RealtimePriceCard';
@@ -27,14 +28,21 @@ interface TopStock {
 
 export default function DashboardPage() {
   const { user } = useAppSelector((state) => state.auth);
+  const dispatch = useAppDispatch();
   const [portfolio, setPortfolio] = useState<PortfolioSummary | null>(null);
-  const [topStocks, setTopStocks] = useState<TopStock[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Redirect admin users to admin page
-  if (user?.role === 'ADMIN') {
+  
+  // Redirect teachers to their dashboard
+  if (user && user.role === 'TEACHER') {
+    return <Navigate to="/teacher" replace />;
+  }
+  
+  // Redirect admins to their page
+  if (user && user.role === 'ADMIN') {
     return <Navigate to="/admin" replace />;
   }
+  
+  const [topStocks, setTopStocks] = useState<TopStock[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -45,6 +53,8 @@ export default function DashboardPage() {
         ]);
 
         setPortfolio(portfolioRes.data);
+        // Redux store 업데이트로 사이드바 현금 표시 동기화
+        dispatch(updateCash(portfolioRes.data.cash));
         setTopStocks(stocksRes.data.slice(0, 5));
       } catch (error) {
         console.error('Failed to fetch dashboard data:', error);
@@ -54,7 +64,7 @@ export default function DashboardPage() {
     };
 
     fetchData();
-  }, []);
+  }, [dispatch]);
 
   if (isLoading) {
     return <LoadingSpinner size="lg" className="h-64" />;
