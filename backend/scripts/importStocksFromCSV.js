@@ -38,12 +38,12 @@ async function importStocks() {
     console.log('📊 Starting stock data import from CSV files...\n');
 
     // Read stock price data (data_3241_20250615.csv)
-    const priceDataPath = path.join(__dirname, '../../data_3241_20250615.csv');
+    const priceDataPath = path.join(__dirname, '../data_3241_20250615.csv');
     const priceData = await parseCSV(priceDataPath);
     console.log(`✅ Loaded ${priceData.length} records from price data file`);
 
     // Read stock info data (data_3308_20250615.csv)
-    const infoDataPath = path.join(__dirname, '../../data_3308_20250615.csv');
+    const infoDataPath = path.join(__dirname, '../data_3308_20250615.csv');
     const infoData = await parseCSV(infoDataPath);
     console.log(`✅ Loaded ${infoData.length} records from info data file`);
 
