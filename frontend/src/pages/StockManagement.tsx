@@ -73,21 +73,27 @@ export default function StockManagement() {
       
       // Also fetch tracked stocks to get current prices
       const trackedResponse = await api.get('/stock-management/tracked');
-      const trackedMap = new Map(
+      const trackedMap = new Map<string, Stock>(
         trackedResponse.data.data.map((stock: Stock) => [stock.symbol, stock])
       );
       
       // Merge data
       const mergedStocks = response.data.data.map((stock: any) => {
         const trackedStock = trackedMap.get(stock.symbol);
-        return {
-          ...stock,
+        const mergedStock: Stock = {
+          symbol: stock.symbol,
+          name: stock.name,
+          market: stock.market,
+          sector: stock.sector,
+          isAdded: stock.isAdded,
+          isTracked: stock.isTracked,
           currentPrice: trackedStock?.currentPrice || 0,
           previousClose: trackedStock?.previousClose || 0,
-          change: trackedStock?.change || 0,
-          changePercent: trackedStock?.changePercent || 0,
+          change: (trackedStock as any)?.change || 0,
+          changePercent: (trackedStock as any)?.changePercent || 0,
           updatedAt: trackedStock?.updatedAt || new Date().toISOString(),
         };
+        return mergedStock;
       });
       
       setStocks(mergedStocks);
