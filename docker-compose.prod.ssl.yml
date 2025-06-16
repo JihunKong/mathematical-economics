@@ -86,6 +86,9 @@ services:
       - backend
     networks:
       - app-network
+    links:
+      - frontend:frontend
+      - backend:backend
     command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
 
   certbot:
