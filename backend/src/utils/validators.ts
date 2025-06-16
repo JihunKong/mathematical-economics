@@ -60,8 +60,8 @@ export const tradingValidators = {
     body('reason')
       .optional()
       .trim()
-      .isLength({ min: 10, max: 500 })
-      .withMessage('Reason must be between 10 and 500 characters'),
+      .isLength({ min: 3, max: 500 })
+      .withMessage('투자 판단 근거는 3자 이상 500자 이하로 입력해주세요'),
   ],
   
   sell: [
@@ -75,8 +75,8 @@ export const tradingValidators = {
     body('reason')
       .optional()
       .trim()
-      .isLength({ min: 10, max: 500 })
-      .withMessage('Reason must be between 10 and 500 characters'),
+      .isLength({ min: 3, max: 500 })
+      .withMessage('투자 판단 근거는 3자 이상 500자 이하로 입력해주세요'),
   ],
 };
 
