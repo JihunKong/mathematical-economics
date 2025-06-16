@@ -79,17 +79,27 @@ export default function Sidebar() {
   const { user } = useAppSelector((state) => state.auth);
   const isTeacher = user?.role === 'TEACHER';
   const isAdmin = user?.role === 'ADMIN';
+  const isStudent = user?.role === 'STUDENT';
 
-  let allMenuItems = [...menuItems];
+  let allMenuItems = [];
   
-  // Admin users can see all menus including teacher menu
+  // Role-based menu display
   if (isAdmin) {
+    // Admin can see all menus
     allMenuItems = [...menuItems, ...teacherMenuItems, ...adminMenuItems];
+  } else if (isTeacher) {
+    // Teacher only sees teacher-specific menus
+    allMenuItems = [
+      {
+        title: '대시보드',
+        path: '/dashboard',
+        icon: menuItems[0].icon
+      },
+      ...teacherMenuItems
+    ];
   } else {
-    // Non-admin users see regular menus
-    if (isTeacher) {
-      allMenuItems = [...allMenuItems, ...teacherMenuItems];
-    }
+    // Students and other users see regular menus
+    allMenuItems = [...menuItems];
   }
 
   return (
