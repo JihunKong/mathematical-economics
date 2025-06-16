@@ -23,8 +23,8 @@ echo ""
 
 echo -e "\n${YELLOW}📦 Import CSV Data:${NC}"
 echo "# Step 1: Copy CSV files from git repo to container"
-echo "sudo docker cp backend/data_3241_20250615.csv mathematical-economics-backend-1:/app/"
-echo "sudo docker cp backend/data_3308_20250615.csv mathematical-economics-backend-1:/app/"
+echo "sudo docker cp backend/data_3241_20250615.csv mathematical-economics-backend:/app/"
+echo "sudo docker cp backend/data_3308_20250615.csv mathematical-economics-backend:/app/"
 echo ""
 
 echo "# Step 2: Run import script"

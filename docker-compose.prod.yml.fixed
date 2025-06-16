@@ -1,7 +1,7 @@
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: mathematical-economics-postgres
+    container_name: economic-math-stock-db-prod
     environment:
       POSTGRES_DB: economic_math_stock_db
       POSTGRES_USER: postgres
@@ -20,7 +20,7 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: mathematical-economics-redis
+    container_name: economic-math-stock-redis-prod
     ports:
       - "6380:6379"
     volumes:
@@ -37,7 +37,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: mathematical-economics-backend
+    container_name: economic-math-stock-backend
     env_file:
       - ./backend/.env.production
     environment:
@@ -71,7 +71,7 @@ services:
       args:
         - VITE_API_URL=/api
         - VITE_SOCKET_URL=/
-    container_name: mathematical-economics-frontend
+    container_name: economic-math-stock-frontend
     env_file:
       - ./frontend/.env.production
     ports:
