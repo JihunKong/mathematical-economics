@@ -3,18 +3,20 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files
+# Copy package files and TypeScript config
 COPY package*.json ./
+COPY tsconfig.json ./
 COPY prisma ./prisma/
 
-# Install dependencies
+# Install all dependencies (including dev dependencies for building)
 RUN npm ci
 
-# Copy source code
-COPY . .
-
-# Generate Prisma Client
+# Generate Prisma Client first (before copying source)
 RUN npx prisma generate
+
+# Copy source code
+COPY src ./src
+COPY scripts ./scripts
 
 # Build TypeScript
 RUN npm run build

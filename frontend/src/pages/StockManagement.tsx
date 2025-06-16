@@ -78,14 +78,17 @@ export default function StockManagement() {
       );
       
       // Merge data
-      const mergedStocks = response.data.data.map((stock: any) => ({
-        ...stock,
-        currentPrice: trackedMap.get(stock.symbol)?.currentPrice || 0,
-        previousClose: trackedMap.get(stock.symbol)?.previousClose || 0,
-        change: trackedMap.get(stock.symbol)?.change || 0,
-        changePercent: trackedMap.get(stock.symbol)?.changePercent || 0,
-        updatedAt: trackedMap.get(stock.symbol)?.updatedAt || new Date().toISOString(),
-      }));
+      const mergedStocks = response.data.data.map((stock: any) => {
+        const trackedStock = trackedMap.get(stock.symbol);
+        return {
+          ...stock,
+          currentPrice: trackedStock?.currentPrice || 0,
+          previousClose: trackedStock?.previousClose || 0,
+          change: trackedStock?.change || 0,
+          changePercent: trackedStock?.changePercent || 0,
+          updatedAt: trackedStock?.updatedAt || new Date().toISOString(),
+        };
+      });
       
       setStocks(mergedStocks);
     } catch (error) {
