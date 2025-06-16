@@ -48,6 +48,11 @@ export class TradingService {
         }
       }
 
+      // Check if stock has valid price
+      if (!stock.currentPrice || stock.currentPrice <= 0) {
+        throw new AppError('현재 가격 정보가 없습니다. 잠시 후 다시 시도해주세요.', 400);
+      }
+
       // Calculate total cost
       const totalCost = stock.currentPrice * quantity;
       const commission = Math.round(totalCost * 0.00015); // 0.015% commission
@@ -165,6 +170,11 @@ export class TradingService {
         if (!allowedStock) {
           throw new AppError('이 종목은 거래가 허용되지 않았습니다', 403);
         }
+      }
+
+      // Check if stock has valid price
+      if (!stock.currentPrice || stock.currentPrice <= 0) {
+        throw new AppError('현재 가격 정보가 없습니다. 잠시 후 다시 시도해주세요.', 400);
       }
 
       const holding = await tx.holding.findUnique({
