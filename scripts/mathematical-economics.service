@@ -1,0 +1,19 @@
+[Unit]
+Description=Mathematical Economics Docker Compose Application
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/home/ubuntu/mathematical-economics
+ExecStart=/usr/bin/docker compose -f docker-compose.prod.ssl.yml up -d
+ExecStop=/usr/bin/docker compose -f docker-compose.prod.ssl.yml down
+TimeoutStartSec=0
+Restart=on-failure
+RestartSec=30
+User=ubuntu
+Group=ubuntu
+
+[Install]
+WantedBy=multi-user.target

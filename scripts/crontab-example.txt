@@ -1,0 +1,17 @@
+# Mathematical Economics 자동화 스케줄
+# crontab -e 명령으로 이 내용을 추가하세요
+
+# SSL 인증서 자동 갱신 (매주 월요일 새벽 2시)
+0 2 * * 1 cd /home/ubuntu/mathematical-economics && docker compose -f docker-compose.prod.ssl.yml exec -T certbot certbot renew --quiet && docker compose -f docker-compose.prod.ssl.yml exec -T nginx nginx -s reload >> /home/ubuntu/ssl-renew.log 2>&1
+
+# 주식 가격 업데이트 - 장 운영 시간 동안 10분마다 (평일 9시~15시 30분)
+*/10 9-15 * * 1-5 /home/ubuntu/mathematical-economics/scripts/update-stock-prices-market-hours.sh
+
+# 장 시작 전 준비 업데이트 (평일 8시 50분)
+50 8 * * 1-5 /home/ubuntu/mathematical-economics/scripts/update-stock-prices.sh
+
+# 로그 파일 정리 (매주 일요일 새벽 3시)
+0 3 * * 0 find /home/ubuntu -name "*.log.*.gz" -mtime +30 -delete
+
+# 시스템 상태 체크 (매시간)
+0 * * * * cd /home/ubuntu/mathematical-economics && docker compose -f docker-compose.prod.ssl.yml ps >> /home/ubuntu/system-health.log 2>&1
