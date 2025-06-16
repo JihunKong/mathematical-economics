@@ -36,7 +36,7 @@ RUN apk add --no-cache \
     py3-pip
 
 # Install Python packages for crawler scripts
-RUN pip3 install requests beautifulsoup4 --break-system-packages
+RUN pip3 install requests beautifulsoup4 lxml aiohttp --break-system-packages
 
 # Tell Puppeteer to use installed chromium
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
