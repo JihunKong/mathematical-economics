@@ -84,11 +84,20 @@ class StockService {
   // 차트 데이터 조회
   async getChartData(symbol: string, period: ChartPeriod): Promise<ChartData[]> {
     try {
-      const response = await api.getStockChart(symbol, period);
-      return response.data;
+      // Try new chart API first
+      const response = await api.get(`/chart/${symbol}`, {
+        params: { period }
+      });
+      return response.data.data;
     } catch (error) {
-      console.error('Failed to fetch chart data:', error);
-      throw error;
+      // Fallback to real-stocks API
+      try {
+        const fallbackResponse = await api.getStockChart(symbol, period);
+        return fallbackResponse.data;
+      } catch (fallbackError) {
+        console.error('Failed to fetch chart data:', fallbackError);
+        throw fallbackError;
+      }
     }
   }
 

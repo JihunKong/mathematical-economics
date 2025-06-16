@@ -10,6 +10,7 @@ import realStockRoutes from './realStock';
 import adminRoutes from './admin';
 import stockManagementRoutes from './stockManagement';
 import stockDataRoutes from './stockData';
+import chartRoutes from './chart';
 import healthRoutes from './health';
 
 const router = Router();
@@ -26,5 +27,6 @@ router.use('/real-stocks', realStockRoutes);
 router.use('/admin', adminRoutes);
 router.use('/stock-management', stockManagementRoutes);
 router.use('/stock-data', stockDataRoutes);
+router.use('/chart', chartRoutes);
 
 export default router;

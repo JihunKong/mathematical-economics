@@ -4,6 +4,7 @@ import { prisma } from './config/database';
 import { patchBigIntJSON } from './middleware/bigintSerializer';
 import { startStockPriceUpdater } from './jobs/stockPriceUpdater';
 import { getStockPriceCollector } from './jobs/stockPriceCollector';
+import { getPriceHistoryCollector } from './jobs/priceHistoryCollector';
 import { stockDataUpdater } from './utils/stockDataUpdater';
 import { Server } from 'http';
 
@@ -86,6 +87,11 @@ const startServer = async () => {
       const stockCollector = getStockPriceCollector();
       stockCollector.startCollector();
       logger.info('Stock price collector started');
+      
+      // Start price history collector
+      const priceHistoryCollector = getPriceHistoryCollector();
+      priceHistoryCollector.start();
+      logger.info('Price history collector started');
     });
 
     // Graceful shutdown
