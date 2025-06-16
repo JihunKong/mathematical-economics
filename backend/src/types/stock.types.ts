@@ -1,4 +1,5 @@
 export interface StockData {
+  id: string;
   symbol: string;
   name: string;
   market: string;
@@ -26,6 +27,7 @@ export interface ChartData {
 }
 
 export interface StockSearchResult {
+  id: string;
   symbol: string;
   name: string;
   market: string;

@@ -106,6 +106,7 @@ export const searchStocks = catchAsync(async (req: AuthenticatedRequest, res: Re
       { name: 'asc' }
     ],
     select: {
+      id: true,
       symbol: true,
       name: true,
       market: true,

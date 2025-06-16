@@ -503,21 +503,31 @@ export default function TeacherClassDetail() {
                           </div>
                         ) : (
                           <div className="space-y-2">
-                            {paginatedStocks.map((stock) => (
-                            <label key={stock.id} className="flex items-center space-x-3 p-3 hover:bg-gray-50 rounded-lg border border-gray-200 cursor-pointer transition-colors">
-                              <input
-                                type="checkbox"
-                                checked={selectedStocks.includes(stock.id)}
-                                onChange={(e) => {
-                                  if (e.target.checked) {
-                                    setSelectedStocks([...selectedStocks, stock.id]);
-                                  } else {
-                                    setSelectedStocks(selectedStocks.filter(id => id !== stock.id));
-                                  }
-                                }}
-                                className="h-4 w-4 text-primary-600 rounded focus:ring-primary-500"
-                              />
-                              <div className="flex-1 grid grid-cols-3 gap-4">
+                            {paginatedStocks.map((stock) => {
+                              // 디버깅용 로그
+                              // console.log('Stock:', stock.name, 'ID:', stock.id);
+                              
+                              return (
+                                <div key={stock.id} className="flex items-center space-x-3 p-3 hover:bg-gray-50 rounded-lg border border-gray-200 transition-colors">
+                                  <input
+                                    type="checkbox"
+                                    id={`stock-${stock.id}`}
+                                    checked={selectedStocks.includes(stock.id)}
+                                    onChange={(e) => {
+                                      // console.log('Checkbox clicked for:', stock.name, 'ID:', stock.id, 'Checked:', e.target.checked);
+                                      
+                                      if (e.target.checked) {
+                                        setSelectedStocks(prev => [...prev, stock.id]);
+                                      } else {
+                                        setSelectedStocks(prev => prev.filter(id => id !== stock.id));
+                                      }
+                                    }}
+                                    className="h-4 w-4 text-primary-600 rounded focus:ring-primary-500 cursor-pointer"
+                                  />
+                              <label 
+                                htmlFor={`stock-${stock.id}`}
+                                className="flex-1 grid grid-cols-3 gap-4 cursor-pointer"
+                              >
                                 <div>
                                   <span className="font-medium text-gray-900">{stock.name}</span>
                                   <span className="text-gray-500 text-sm ml-2">({stock.symbol})</span>
@@ -533,9 +543,10 @@ export default function TeacherClassDetail() {
                                 <div className="text-right">
                                   <span className="font-medium text-gray-900">{formatCurrency(stock.currentPrice || 0)}</span>
                                 </div>
-                              </div>
-                            </label>
-                          ))}
+                              </label>
+                                </div>
+                              );
+                            })}
                           </div>
                         )}
                         

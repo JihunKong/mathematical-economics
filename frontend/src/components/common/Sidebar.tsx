@@ -89,14 +89,7 @@ export default function Sidebar() {
     allMenuItems = [...menuItems, ...teacherMenuItems, ...adminMenuItems];
   } else if (isTeacher) {
     // Teacher only sees teacher-specific menus
-    allMenuItems = [
-      {
-        title: '대시보드',
-        path: '/dashboard',
-        icon: menuItems[0].icon
-      },
-      ...teacherMenuItems
-    ];
+    allMenuItems = [...teacherMenuItems];
   } else {
     // Students and other users see regular menus
     allMenuItems = [...menuItems];

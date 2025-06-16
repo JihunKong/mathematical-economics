@@ -116,6 +116,7 @@ export class StockService {
       where,
       take: 20,
       select: {
+        id: true,
         symbol: true,
         name: true,
         market: true,
@@ -190,6 +191,7 @@ export class StockService {
     const changePercent = previousClose !== 0 ? (change / previousClose) * 100 : 0;
 
     return {
+      id: stock.id,
       symbol: stock.symbol,
       name: stock.name,
       market: stock.market,
