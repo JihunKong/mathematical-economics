@@ -68,7 +68,10 @@ export default function StockManagement() {
     try {
       setIsLoading(true);
       const response = await api.get('/stock-management/search', {
-        params: { query: searchQuery }
+        params: { 
+          query: searchQuery,
+          limit: 3000  // Get all stocks
+        }
       });
       
       // Also fetch tracked stocks to get current prices

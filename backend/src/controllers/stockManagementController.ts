@@ -77,45 +77,52 @@ const KOREAN_STOCKS = [
 
 // Search stocks
 export const searchStocks = catchAsync(async (req: AuthenticatedRequest, res: Response) => {
-  const { query, market } = req.query;
+  const { query, market, limit = 100 } = req.query;
   
-  let results = KOREAN_STOCKS;
+  // Build where clause for database query
+  const whereClause: any = {};
   
   // Filter by search query
   if (query && typeof query === 'string') {
     const searchTerm = query.toLowerCase();
-    results = results.filter(stock => 
-      stock.symbol.includes(searchTerm) || 
-      stock.name.toLowerCase().includes(searchTerm) ||
-      stock.sector?.toLowerCase().includes(searchTerm)
-    );
+    whereClause.OR = [
+      { symbol: { contains: searchTerm, mode: 'insensitive' } },
+      { name: { contains: searchTerm, mode: 'insensitive' } },
+      { sector: { contains: searchTerm, mode: 'insensitive' } }
+    ];
   }
   
   // Filter by market
   if (market && typeof market === 'string') {
-    results = results.filter(stock => stock.market === market.toUpperCase());
+    whereClause.market = market.toUpperCase();
   }
   
-  // Check which stocks are already in database
-  const existingStocks = await prisma.stock.findMany({
-    where: {
-      symbol: {
-        in: results.map(s => s.symbol)
-      }
-    },
+  // Get stocks from database
+  const stocks = await prisma.stock.findMany({
+    where: whereClause,
+    take: Number(limit) || 100,
+    orderBy: [
+      { isTracked: 'desc' },
+      { name: 'asc' }
+    ],
     select: {
       symbol: true,
-      isTracked: true
+      name: true,
+      market: true,
+      sector: true,
+      isTracked: true,
+      currentPrice: true,
+      previousClose: true,
+      change: true,
+      changePercent: true,
+      updatedAt: true
     }
   });
   
-  const existingMap = new Map(existingStocks.map(s => [s.symbol, s]));
-  
-  // Add status to results
-  const enhancedResults = results.map(stock => ({
+  // Add isAdded status (all stocks in DB are added)
+  const enhancedResults = stocks.map(stock => ({
     ...stock,
-    isAdded: existingMap.has(stock.symbol),
-    isTracked: existingMap.get(stock.symbol)?.isTracked || false
+    isAdded: true
   }));
   
   res.status(200).json({
