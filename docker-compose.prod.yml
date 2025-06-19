@@ -43,7 +43,7 @@ services:
       REDIS_URL: redis://mathematical-economics-redis:6379
       CORS_ORIGIN: http://경제교실.com,https://경제교실.com,http://xn--289aykm66cwye.com,https://xn--289aykm66cwye.com
     ports:
-      - "5000:5000"
+      - "5001:5000"
     depends_on:
       postgres:
         condition: service_healthy
