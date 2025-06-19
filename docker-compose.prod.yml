@@ -13,7 +13,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U mathuser"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -43,7 +43,7 @@ services:
       REDIS_URL: redis://mathematical-economics-redis:6379
       CORS_ORIGIN: http://경제교실.com,https://경제교실.com,http://xn--289aykm66cwye.com,https://xn--289aykm66cwye.com
     ports:
-      - "5001:5000"
+      - "5000:5000"
     depends_on:
       postgres:
         condition: service_healthy
