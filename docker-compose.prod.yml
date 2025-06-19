@@ -38,12 +38,12 @@ services:
     container_name: mathematical-economics-backend
     environment:
       NODE_ENV: production
-      PORT: 5001
+      PORT: 5000
       DATABASE_URL: postgresql://mathuser:mathpass123@mathematical-economics-postgres:5432/mathematical_economics
       REDIS_URL: redis://mathematical-economics-redis:6379
       CORS_ORIGIN: http://경제교실.com,https://경제교실.com,http://xn--289aykm66cwye.com,https://xn--289aykm66cwye.com
     ports:
-      - "5001:5000"
+      - "5000:5000"
     depends_on:
       postgres:
         condition: service_healthy
