@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { authRateLimiter } from '../middleware/rateLimiter';
+import { loginRateLimiter } from '../middleware/security';
 import { validate } from '../middleware/validation';
 import { authValidators } from '../utils/validators';
 import * as authController from '../controllers/authController';
@@ -16,6 +17,7 @@ router.post(
 
 router.post(
   '/login',
+  loginRateLimiter,
   authRateLimiter,
   authValidators.login,
   validate,

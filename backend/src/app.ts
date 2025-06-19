@@ -9,6 +9,7 @@ import dotenv from 'dotenv';
 import { errorHandler } from './middleware/errorHandler';
 import { rateLimiter } from './middleware/rateLimiter';
 import { bigintSerializer, patchBigIntJSON } from './middleware/bigintSerializer';
+import { securityMiddleware, securityHeaders, loginRateLimiter } from './middleware/security';
 import routes from './routes';
 import { logger } from './utils/logger';
 
@@ -28,8 +29,31 @@ export const createApp = (): { app: Application; io: Server; httpServer: any } =
     }
   });
 
-  // Middleware
-  app.use(helmet());
+  // Security headers
+  app.use(securityHeaders);
+  
+  // Helmet with custom configuration
+  app.use(helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrc: ["'self'"],
+        imgSrc: ["'self'", "data:", "https:"],
+        connectSrc: ["'self'"],
+        fontSrc: ["'self'"],
+        objectSrc: ["'none'"],
+        mediaSrc: ["'self'"],
+        frameSrc: ["'none'"],
+      },
+    },
+    hsts: {
+      maxAge: 31536000,
+      includeSubDomains: true,
+      preload: true
+    }
+  }));
+  
   app.use(bigintSerializer);
   app.use(cors({
     origin: (origin, callback) => {
@@ -44,10 +68,13 @@ export const createApp = (): { app: Application; io: Server; httpServer: any } =
     },
     credentials: true
   }));
-  app.use(express.json());
-  app.use(express.urlencoded({ extended: true }));
+  app.use(express.json({ limit: '10mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '10mb' }));
   app.use(morgan('combined', { stream: { write: (message) => logger.info(message.trim()) } }));
 
+  // Security middleware (suspicious activity detection)
+  app.use(securityMiddleware);
+  
   // Rate limiting
   app.use('/api/', rateLimiter);
 
