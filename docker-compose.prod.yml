@@ -17,8 +17,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - app-network
 
   redis:
     image: redis:7-alpine
@@ -32,23 +30,18 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - app-network
 
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile.prod
     container_name: mathematical-economics-backend
-    env_file:
-      - ./backend/.env
     environment:
       NODE_ENV: production
-      PORT: 5000
-      DATABASE_URL: postgresql://postgres:postgres123@postgres:5432/economic_math_stock_db
-      REDIS_URL: redis://redis:6379
-      CORS_ORIGIN: http://localhost:8081
-      ALLOWED_ORIGINS: "*"
+      PORT: 5001
+      DATABASE_URL: postgresql://mathuser:mathpass123@mathematical-economics-postgres:5432/mathematical_economics
+      REDIS_URL: redis://mathematical-economics-redis:6379
+      CORS_ORIGIN: http://경제교실.com,https://경제교실.com,http://xn--289aykm66cwye.com,https://xn--289aykm66cwye.com
     ports:
       - "5001:5000"
     depends_on:
@@ -62,8 +55,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-    networks:
-      - app-network
     command: node dist/server.js
 
   frontend:
@@ -74,18 +65,10 @@ services:
         - VITE_API_URL=/api
         - VITE_SOCKET_URL=/
     container_name: mathematical-economics-frontend
-    env_file:
-      - ./frontend/.env
     ports:
-      - "8081:80"
+      - "3000:80"
     depends_on:
       - backend
-    networks:
-      - app-network
-
-networks:
-  app-network:
-    driver: bridge
 
 volumes:
   postgres_data:
