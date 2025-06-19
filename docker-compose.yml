@@ -3,7 +3,7 @@ version: '3.8'
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: economic-math-stock-db
+    container_name: mathematical-economics-postgres
     environment:
       POSTGRES_DB: mathematical_economics
       POSTGRES_USER: mathuser
@@ -20,7 +20,7 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: economic-math-stock-redis
+    container_name: mathematical-economics-redis
     ports:
       - "6380:6379"
     volumes:
@@ -35,7 +35,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile.dev
-    container_name: economic-math-stock-backend
+    container_name: mathematical-economics-backend
     environment:
       NODE_ENV: development
       DATABASE_URL: postgresql://mathuser:mathpass123@postgres:5432/mathematical_economics
@@ -59,7 +59,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile.dev
-    container_name: economic-math-stock-frontend-dev
+    container_name: mathematical-economics-frontend
     environment:
       NODE_ENV: development
       VITE_API_URL: http://localhost:5002/api
