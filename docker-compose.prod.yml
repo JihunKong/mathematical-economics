@@ -8,8 +8,6 @@ services:
       POSTGRES_DB: mathematical_economics
       POSTGRES_USER: mathuser
       POSTGRES_PASSWORD: mathpass123
-    ports:
-      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -17,12 +15,13 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - app-network
+    restart: unless-stopped
 
   redis:
     image: redis:7-alpine
     container_name: mathematical-economics-redis
-    ports:
-      - "6380:6379"
     volumes:
       - redis_data:/data
     healthcheck:
@@ -30,6 +29,9 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - app-network
+    restart: unless-stopped
 
   backend:
     build:
@@ -41,9 +43,7 @@ services:
       PORT: 5000
       DATABASE_URL: postgresql://mathuser:mathpass123@mathematical-economics-postgres:5432/mathematical_economics
       REDIS_URL: redis://mathematical-economics-redis:6379
-      CORS_ORIGIN: http://경제교실.com,https://경제교실.com,http://xn--289aykm66cwye.com,https://xn--289aykm66cwye.com
-    ports:
-      - "5000:5000"
+      CORS_ORIGIN: https://경제교실.com,https://xn--289aykm66cwye.com,https://www.경제교실.com,https://www.xn--289aykm66cwye.com
     depends_on:
       postgres:
         condition: service_healthy
@@ -55,20 +55,42 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+    networks:
+      - app-network
+    restart: unless-stopped
     command: node dist/server.js
 
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile.prod
-      args:
-        - VITE_API_URL=/api
-        - VITE_SOCKET_URL=/
-    container_name: mathematical-economics-frontend
+  nginx:
+    image: nginx:alpine
+    container_name: mathematical-economics-nginx
     ports:
-      - "3000:80"
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.prod.conf:/etc/nginx/nginx.conf:ro
+      - ./frontend/dist:/usr/share/nginx/html:ro
+      - ./certbot/conf:/etc/letsencrypt:ro
+      - ./certbot/www:/var/www/certbot:ro
     depends_on:
       - backend
+    networks:
+      - app-network
+    restart: unless-stopped
+    command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
+
+  # Optional: Certbot for SSL certificate renewal
+  certbot:
+    image: certbot/certbot
+    container_name: mathematical-economics-certbot
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    restart: unless-stopped
+
+networks:
+  app-network:
+    driver: bridge
 
 volumes:
   postgres_data:
