@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { RealStockService } from '../services/realStockService';
 import { catchAsync } from '../utils/catchAsync';
+import { cacheService, CACHE_TTL, cacheKeys } from '../services/cacheService';
 
 const realStockService = new RealStockService();
 
@@ -8,7 +9,22 @@ const realStockService = new RealStockService();
 export const getRealTimePrice = catchAsync(async (req: Request, res: Response) => {
   const { symbol } = req.params;
   
+  // Check cache first
+  const cacheKey = cacheKeys.stockPrice(symbol);
+  const cached = cacheService.get(cacheKey);
+  
+  if (cached) {
+    res.setHeader('X-Cache-Hit', 'true');
+    return res.json({
+      success: true,
+      data: cached
+    });
+  }
+  
   const stock = await realStockService.updateStockPrice(symbol);
+  
+  // Cache the result
+  cacheService.set(cacheKey, stock, CACHE_TTL.STOCK_PRICE);
   
   res.json({
     success: true,
@@ -21,7 +37,22 @@ export const getChartData = catchAsync(async (req: Request, res: Response) => {
   const { symbol } = req.params;
   const { period = '1month' } = req.query;
   
+  // Check cache first
+  const cacheKey = cacheKeys.stockChart(symbol, period as string);
+  const cached = cacheService.get(cacheKey);
+  
+  if (cached) {
+    res.setHeader('X-Cache-Hit', 'true');
+    return res.json({
+      success: true,
+      data: cached
+    });
+  }
+  
   const chartData = await realStockService.getStockChartData(symbol, period as string);
+  
+  // Cache the result
+  cacheService.set(cacheKey, chartData, CACHE_TTL.STOCK_CHART);
   
   res.json({
     success: true,

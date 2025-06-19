@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '@/hooks/useRedux';
 import { updateCash } from '@/store/portfolioSlice';
+import { useStockPrices } from '@/hooks/useStockPrices';
 import api from '@/services/api';
 import stockService, { StockPrice } from '@/services/stockService';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
@@ -36,7 +37,6 @@ export default function TradingPage() {
   const { user } = useAppSelector((state) => state.auth);
   const dispatch = useAppDispatch();
   const [stocks, setStocks] = useState<Stock[]>([]);
-  const [realtimePrices, setRealtimePrices] = useState<Map<string, StockPrice>>(new Map());
   const [holdings, setHoldings] = useState<Holding[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -50,6 +50,31 @@ export default function TradingPage() {
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [selectedMarket, setSelectedMarket] = useState<'all' | 'KOSPI' | 'KOSDAQ'>('all');
 
+  // Filtered stocks based on search and market
+  const filteredStocks = useMemo(() => {
+    return stocks
+      .filter(stock => 
+        (selectedMarket === 'all' || stock.market === selectedMarket) &&
+        (stock.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
+         stock.name.toLowerCase().includes(searchQuery.toLowerCase()))
+      );
+  }, [stocks, searchQuery, selectedMarket]);
+
+  // Get visible stock symbols for price updates
+  const visibleSymbols = useMemo(() => {
+    return filteredStocks.slice(0, 20).map(s => s.symbol);
+  }, [filteredStocks]);
+
+  // Use optimized hook for stock prices
+  const { prices: realtimePrices, refresh: refreshPrices } = useStockPrices({
+    symbols: visibleSymbols,
+    autoRefresh,
+    refreshInterval: 30000,
+    onError: (error) => {
+      console.error('Failed to update prices:', error);
+    }
+  });
+
   // Redirect admin users to admin page
   if (user && user.role === 'ADMIN') {
     return <Navigate to="/admin" replace />;
@@ -58,32 +83,6 @@ export default function TradingPage() {
   useEffect(() => {
     fetchData();
   }, []);
-
-  // 실시간 가격 업데이트
-  useEffect(() => {
-    if (!autoRefresh || stocks.length === 0) return;
-
-    const updatePrices = async () => {
-      try {
-        // 현재 표시되는 주식들의 심볼만 추출
-        const visibleSymbols = filteredStocks.slice(0, 20).map(s => s.symbol);
-        const prices = await stockService.getBatchPrices(visibleSymbols);
-        
-        const priceMap = new Map<string, StockPrice>();
-        prices.forEach(price => {
-          priceMap.set(price.symbol, price);
-        });
-        setRealtimePrices(priceMap);
-      } catch (error) {
-        console.error('Failed to update prices:', error);
-      }
-    };
-
-    updatePrices();
-    const interval = setInterval(updatePrices, 10000); // 10초마다 업데이트
-
-    return () => clearInterval(interval);
-  }, [autoRefresh, stocks, searchQuery, selectedMarket]);
 
   const fetchData = useCallback(async () => {
     try {
@@ -100,17 +99,6 @@ export default function TradingPage() {
       
       // Redux store 업데이트
       dispatch(updateCash(portfolioRes.data.cash));
-
-      // 초기 실시간 가격 로드
-      if (stocksRes.data.length > 0) {
-        const symbols = stocksRes.data.slice(0, 20).map((s: Stock) => s.symbol);
-        const prices = await stockService.getBatchPrices(symbols);
-        const priceMap = new Map<string, StockPrice>();
-        prices.forEach(price => {
-          priceMap.set(price.symbol, price);
-        });
-        setRealtimePrices(priceMap);
-      }
     } catch (error) {
       console.error('Failed to fetch data:', error);
       toast.error('데이터를 불러오는데 실패했습니다');
@@ -177,15 +165,6 @@ export default function TradingPage() {
     }
   };
 
-  const filteredStocks = useMemo(() => {
-    return stocks
-      .filter(stock => 
-        (selectedMarket === 'all' || stock.market === selectedMarket) &&
-        (stock.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
-         stock.name.toLowerCase().includes(searchQuery.toLowerCase()))
-      );
-  }, [stocks, searchQuery, selectedMarket]);
-
   const getHoldingQuantity = (symbol: string) => {
     const holding = holdings.find(h => h.symbol === symbol);
     return holding?.quantity || 0;
@@ -218,7 +197,10 @@ export default function TradingPage() {
               <span className="text-sm">자동 갱신</span>
             </button>
             <button
-              onClick={fetchData}
+              onClick={async () => {
+                await fetchData();
+                await refreshPrices();
+              }}
               disabled={refreshing}
               className={clsx(
                 'flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors',

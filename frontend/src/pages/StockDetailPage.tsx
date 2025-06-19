@@ -81,7 +81,7 @@ export default function StockDetailPage() {
       } catch (error) {
         console.error('Failed to fetch realtime price:', error);
       }
-    }, 5000); // 5초마다 업데이트
+    }, 30000); // 30초마다 업데이트 (API 부하 감소)
 
     return () => clearInterval(interval);
   }, [symbol, autoRefresh]);

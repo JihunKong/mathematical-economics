@@ -36,6 +36,10 @@ export interface StockDetail {
 
 export type ChartPeriod = '1D' | '1W' | '1M' | '3M' | '1Y';
 
+// Price cache to prevent duplicate API calls
+const priceCache = new Map<string, { data: StockPrice; timestamp: number }>();
+const CACHE_TTL = 10000; // 10 seconds cache
+
 class StockService {
   // 주식 목록 조회
   async getStocks(market?: string) {
@@ -70,11 +74,22 @@ class StockService {
     }
   }
 
-  // 실시간 가격 조회
+  // 실시간 가격 조회 (캐싱 적용)
   async getRealtimePrice(symbol: string): Promise<StockPrice> {
     try {
+      // Check cache first
+      const cached = priceCache.get(symbol);
+      if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+        return cached.data;
+      }
+
       const response = await api.getStockPrice(symbol);
-      return response.data;
+      const priceData = response.data;
+      
+      // Cache the result
+      priceCache.set(symbol, { data: priceData, timestamp: Date.now() });
+      
+      return priceData;
     } catch (error) {
       console.error('Failed to fetch realtime price:', error);
       throw error;
@@ -101,21 +116,79 @@ class StockService {
     }
   }
 
-  // 여러 종목의 실시간 가격 조회
+  // 여러 종목의 실시간 가격 조회 (배치 API 사용)
   async getBatchPrices(symbols: string[]): Promise<StockPrice[]> {
     try {
-      const promises = symbols.map(symbol => this.getRealtimePrice(symbol));
-      const results = await Promise.allSettled(promises);
+      if (symbols.length === 0) return [];
+
+      // Remove duplicates
+      const uniqueSymbols = [...new Set(symbols)];
       
-      return results
-        .filter((result): result is PromiseFulfilledResult<StockPrice> => 
-          result.status === 'fulfilled'
-        )
-        .map(result => result.value);
+      // Check cache and separate cached vs non-cached symbols
+      const now = Date.now();
+      const cachedPrices: StockPrice[] = [];
+      const symbolsToFetch: string[] = [];
+
+      uniqueSymbols.forEach(symbol => {
+        const cached = priceCache.get(symbol);
+        if (cached && now - cached.timestamp < CACHE_TTL) {
+          cachedPrices.push(cached.data);
+        } else {
+          symbolsToFetch.push(symbol);
+        }
+      });
+
+      // If all are cached, return immediately
+      if (symbolsToFetch.length === 0) {
+        return cachedPrices;
+      }
+
+      // Use batch API endpoint
+      const response = await api.post('/stocks/prices/multiple', {
+        symbols: symbolsToFetch
+      });
+
+      const fetchedPrices = response.data.data || [];
+      
+      // Cache the fetched prices
+      fetchedPrices.forEach((price: StockPrice) => {
+        priceCache.set(price.symbol, { data: price, timestamp: now });
+      });
+
+      // Combine cached and fetched prices
+      return [...cachedPrices, ...fetchedPrices];
     } catch (error) {
       console.error('Failed to fetch batch prices:', error);
-      throw error;
+      // Fallback to individual calls only if batch API fails
+      // But limit concurrent requests to prevent 429 errors
+      const batchSize = 5;
+      const results: StockPrice[] = [];
+      
+      for (let i = 0; i < symbols.length; i += batchSize) {
+        const batch = symbols.slice(i, i + batchSize);
+        const promises = batch.map(symbol => 
+          this.getRealtimePrice(symbol).catch(err => {
+            console.error(`Failed to fetch price for ${symbol}:`, err);
+            return null;
+          })
+        );
+        
+        const batchResults = await Promise.all(promises);
+        results.push(...batchResults.filter((r): r is StockPrice => r !== null));
+        
+        // Add a small delay between batches to prevent rate limiting
+        if (i + batchSize < symbols.length) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+      }
+      
+      return results;
     }
+  }
+
+  // Clear price cache
+  clearPriceCache() {
+    priceCache.clear();
   }
 
   // 차트 데이터 형식 변환 (Chart.js용)

@@ -25,14 +25,18 @@ export const authRateLimiter = rateLimit({
 
 // 주식 관련 엔드포인트를 위한 더 관대한 rate limiter
 export const stockRateLimiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '300000'), // 5 minutes
-  max: 1000, // Limit each IP to 1000 requests per windowMs
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '60000'), // 1 minute
+  max: 200, // Limit each IP to 200 requests per minute
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
+  skipSuccessfulRequests: true, // Don't count successful requests
   skip: (req: Request) => {
-    // 인증된 사용자는 더 관대한 제한 적용
-    return req.user ? false : false;
+    // Skip rate limiting for batch endpoints
+    if (req.path.includes('/prices/multiple') || req.path.includes('/update-all-prices')) {
+      return true;
+    }
+    return false;
   }
 });
 

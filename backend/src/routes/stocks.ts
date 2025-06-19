@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { authenticate } from '../middleware/auth';
 import { validate } from '../middleware/validation';
 import { stockValidators } from '../utils/validators';
-import { stockRateLimiter } from '../middleware/rateLimiter';
+import { smartRateLimiter } from '../middleware/smartRateLimiter';
 import * as stockController from '../controllers/stockController';
 
 const router = Router();
@@ -28,7 +28,7 @@ router.get(
 
 router.get(
   '/:symbol/price',
-  stockRateLimiter,
+  smartRateLimiter,
   stockValidators.getBySymbol,
   validate,
   stockController.getStockPrice
@@ -36,7 +36,7 @@ router.get(
 
 router.get(
   '/:symbol/chart',
-  stockRateLimiter,
+  smartRateLimiter,
   stockValidators.getBySymbol,
   validate,
   stockController.getStockChart
@@ -45,7 +45,7 @@ router.get(
 // 새로운 실시간 가격 조회 엔드포인트
 router.get(
   '/:symbol/realtime',
-  stockRateLimiter,
+  smartRateLimiter,
   stockValidators.getBySymbol,
   validate,
   stockController.getRealtimePrice
@@ -54,14 +54,14 @@ router.get(
 // 여러 종목 가격 일괄 조회
 router.post(
   '/prices/multiple',
-  stockRateLimiter,
+  smartRateLimiter,
   stockController.getMultiplePrices
 );
 
 // 과거 데이터 조회 (차트용)
 router.get(
   '/:symbol/historical',
-  stockRateLimiter,
+  smartRateLimiter,
   stockValidators.getBySymbol,
   validate,
   stockController.getHistoricalData
