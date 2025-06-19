@@ -77,6 +77,7 @@ export class TeacherService {
           where: {
             isActive: true,
           },
+          take: 50, // 성능을 위해 최대 50개로 제한
         },
       },
     });
@@ -124,6 +125,11 @@ export class TeacherService {
     teacherId: string,
     stockIds: string[]
   ) {
+    // Validate stock count limit
+    if (stockIds.length > 50) {
+      throw new AppError('최대 50개 종목까지만 선택할 수 있습니다', 400);
+    }
+
     // Verify teacher owns the class
     const classData = await prisma.class.findFirst({
       where: {

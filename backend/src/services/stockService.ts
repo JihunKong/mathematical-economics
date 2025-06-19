@@ -106,6 +106,7 @@ export class StockService {
           isActive: true,
         },
         select: { stockId: true },
+        take: 50, // 성능 최적화를 위해 최대 50개로 제한
       });
 
       const allowedStockIds = allowedStocks.map(as => as.stockId);
@@ -185,8 +186,9 @@ export class StockService {
 
   private formatStockData(stock: any): StockData {
     // Handle missing price data gracefully
-    const currentPrice = stock.currentPrice || 0;
-    const previousClose = stock.previousClose || currentPrice || 1;
+    // If currentPrice is 0 or missing, try to use previousClose or a default value
+    const currentPrice = stock.currentPrice || stock.previousClose || 50000;
+    const previousClose = stock.previousClose || currentPrice;
     const change = currentPrice - previousClose;
     const changePercent = previousClose !== 0 ? (change / previousClose) * 100 : 0;
 

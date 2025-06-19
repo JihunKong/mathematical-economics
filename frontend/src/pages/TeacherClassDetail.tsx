@@ -372,7 +372,7 @@ export default function TeacherClassDetail() {
             {/* Modal Header */}
             <div className="px-6 py-4 border-b border-gray-200">
               <h2 className="text-xl font-bold text-gray-900">허용 종목 관리</h2>
-              <p className="text-sm text-gray-600 mt-1">학생들이 거래할 수 있는 종목을 선택하세요</p>
+              <p className="text-sm text-gray-600 mt-1">학생들이 거래할 수 있는 종목을 선택하세요 (최대 50개)</p>
             </div>
             
             {/* Search Section */}
@@ -427,13 +427,18 @@ export default function TeacherClassDetail() {
                 </div>
                 
                 <div className="flex items-center justify-between">
-                  <p className="text-sm text-gray-600">
+                  <p className={clsx(
+                    "text-sm",
+                    selectedStocks.length >= 50 ? "text-red-600 font-medium" :
+                    selectedStocks.length >= 40 ? "text-orange-600" :
+                    "text-gray-600"
+                  )}>
                     {(() => {
                       const filteredCount = availableStocks.filter(stock => 
                         (selectedMarket === 'all' || stock.market === selectedMarket) &&
                         (selectedSector === 'all' || stock.sector === selectedSector)
                       ).length;
-                      return `검색된 ${filteredCount}개 종목 중 ${selectedStocks.length}개 선택됨`;
+                      return `검색된 ${filteredCount}개 종목 중 ${selectedStocks.length}/50개 선택됨`;
                     })()}
                   </p>
                   <div className="flex gap-2">
@@ -445,7 +450,25 @@ export default function TeacherClassDetail() {
                             (selectedSector === 'all' || stock.sector === selectedSector)
                           )
                           .map(s => s.id);
-                        setSelectedStocks(prev => [...new Set([...prev, ...filteredIds])]);
+                        
+                        // Calculate how many can be added before hitting 50 limit
+                        const currentCount = selectedStocks.length;
+                        const availableSlots = 50 - currentCount;
+                        
+                        if (availableSlots <= 0) {
+                          toast.error('이미 최대 50개 종목을 선택했습니다.');
+                          return;
+                        }
+                        
+                        // Only add stocks that aren't already selected, up to the limit
+                        const newStocks = filteredIds.filter(id => !selectedStocks.includes(id));
+                        const stocksToAdd = newStocks.slice(0, availableSlots);
+                        
+                        if (stocksToAdd.length < newStocks.length) {
+                          toast.warning(`50개 제한으로 인해 ${stocksToAdd.length}개만 추가되었습니다.`);
+                        }
+                        
+                        setSelectedStocks(prev => [...prev, ...stocksToAdd]);
                       }}
                       className="text-sm text-primary-600 hover:text-primary-700 font-medium"
                     >
@@ -513,16 +536,28 @@ export default function TeacherClassDetail() {
                                     type="checkbox"
                                     id={`stock-${stock.id}`}
                                     checked={selectedStocks.includes(stock.id)}
+                                    disabled={selectedStocks.length >= 50 && !selectedStocks.includes(stock.id)}
                                     onChange={(e) => {
                                       // console.log('Checkbox clicked for:', stock.name, 'ID:', stock.id, 'Checked:', e.target.checked);
                                       
                                       if (e.target.checked) {
+                                        // Check if already at 50 items limit
+                                        if (selectedStocks.length >= 50) {
+                                          toast.error('최대 50개 종목까지만 선택할 수 있습니다.');
+                                          e.preventDefault();
+                                          return;
+                                        }
                                         setSelectedStocks(prev => [...prev, stock.id]);
                                       } else {
                                         setSelectedStocks(prev => prev.filter(id => id !== stock.id));
                                       }
                                     }}
-                                    className="h-4 w-4 text-primary-600 rounded focus:ring-primary-500 cursor-pointer"
+                                    className={clsx(
+                                      "h-4 w-4 text-primary-600 rounded focus:ring-primary-500",
+                                      selectedStocks.length >= 50 && !selectedStocks.includes(stock.id) 
+                                        ? "cursor-not-allowed opacity-50" 
+                                        : "cursor-pointer"
+                                    )}
                                   />
                               <label 
                                 htmlFor={`stock-${stock.id}`}

@@ -131,6 +131,12 @@ export default function TradingPage() {
       return;
     }
 
+    const currentPrice = realtimePrices.get(selectedStock.symbol)?.currentPrice || selectedStock.currentPrice;
+    if (!currentPrice || currentPrice === 0) {
+      toast.error('현재 가격 정보를 불러올 수 없습니다. 잠시 후 다시 시도해주세요.');
+      return;
+    }
+
     const qty = parseInt(quantity);
     
     try {
@@ -337,15 +343,21 @@ export default function TradingPage() {
                     const displayPrice = realtimePrice?.currentPrice || stock.currentPrice;
                     return (
                       <div>
-                        <div className="font-medium">{formatCurrency(displayPrice)}</div>
-                        {realtimePrice && realtimePrice.timestamp && (
-                          <div className="text-xs text-gray-500">
-                            {new Date(realtimePrice.timestamp).toLocaleTimeString('ko-KR', { 
-                              hour: '2-digit', 
-                              minute: '2-digit', 
-                              second: '2-digit' 
-                            })}
-                          </div>
+                        {displayPrice && displayPrice > 0 ? (
+                          <>
+                            <div className="font-medium">{formatCurrency(displayPrice)}</div>
+                            {realtimePrice && realtimePrice.timestamp && (
+                              <div className="text-xs text-gray-500">
+                                {new Date(realtimePrice.timestamp).toLocaleTimeString('ko-KR', { 
+                                  hour: '2-digit', 
+                                  minute: '2-digit', 
+                                  second: '2-digit' 
+                                })}
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <div className="text-gray-400 italic">가격 정보 없음</div>
                         )}
                       </div>
                     );
@@ -384,22 +396,42 @@ export default function TradingPage() {
                   <div className="flex gap-2">
                     <button
                       onClick={() => {
-                        setSelectedStock(stock);
+                        const realtimePrice = realtimePrices.get(stock.symbol);
+                        const currentPrice = realtimePrice?.currentPrice || stock.currentPrice;
+                        if (!currentPrice || currentPrice === 0) {
+                          toast.error('현재 가격 정보가 없습니다. 잠시 후 다시 시도해주세요.');
+                          return;
+                        }
+                        setSelectedStock({
+                          ...stock,
+                          currentPrice: currentPrice
+                        });
                         setTradeMode('buy');
                         setShowTradeModal(true);
                       }}
-                      className="text-red-600 hover:text-red-900 font-medium"
+                      className="text-red-600 hover:text-red-900 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                      disabled={!((realtimePrices.get(stock.symbol)?.currentPrice || stock.currentPrice) > 0)}
                     >
                       매수
                     </button>
                     {getHoldingQuantity(stock.symbol) > 0 && (
                       <button
                         onClick={() => {
-                          setSelectedStock(stock);
+                          const realtimePrice = realtimePrices.get(stock.symbol);
+                          const currentPrice = realtimePrice?.currentPrice || stock.currentPrice;
+                          if (!currentPrice || currentPrice === 0) {
+                            toast.error('현재 가격 정보가 없습니다. 잠시 후 다시 시도해주세요.');
+                            return;
+                          }
+                          setSelectedStock({
+                            ...stock,
+                            currentPrice: currentPrice
+                          });
                           setTradeMode('sell');
                           setShowTradeModal(true);
                         }}
-                        className="text-blue-600 hover:text-blue-900 font-medium"
+                        className="text-blue-600 hover:text-blue-900 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled={!((realtimePrices.get(stock.symbol)?.currentPrice || stock.currentPrice) > 0)}
                       >
                         매도
                       </button>
@@ -422,7 +454,7 @@ export default function TradingPage() {
             
             <div className="mb-4">
               <p className="text-sm text-gray-600">현재가</p>
-              <p className="text-lg font-semibold">{formatCurrency(selectedStock.currentPrice)}</p>
+              <p className="text-lg font-semibold">{formatCurrency(realtimePrices.get(selectedStock.symbol)?.currentPrice || selectedStock.currentPrice)}</p>
             </div>
 
             {tradeMode === 'sell' && (
@@ -447,7 +479,7 @@ export default function TradingPage() {
               />
               {quantity && parseInt(quantity) > 0 && (
                 <p className="text-sm text-gray-600 mt-1">
-                  예상 {tradeMode === 'buy' ? '매수' : '매도'} 금액: {formatCurrency(selectedStock.currentPrice * parseInt(quantity))}
+                  예상 {tradeMode === 'buy' ? '매수' : '매도'} 금액: {formatCurrency((realtimePrices.get(selectedStock.symbol)?.currentPrice || selectedStock.currentPrice) * parseInt(quantity))}
                 </p>
               )}
             </div>

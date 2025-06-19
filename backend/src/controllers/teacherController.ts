@@ -115,6 +115,10 @@ export const updateAllowedStocks = async (
       throw new AppError('stockIds must be an array', 400);
     }
 
+    if (stockIds.length > 50) {
+      throw new AppError('최대 50개 종목까지만 선택할 수 있습니다', 400);
+    }
+
     const updatedStocks = await teacherService.updateAllowedStocks(
       classId,
       req.user.id,
