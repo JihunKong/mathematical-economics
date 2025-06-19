@@ -26,7 +26,7 @@ export const getRealTimePrice = catchAsync(async (req: Request, res: Response) =
   // Cache the result
   cacheService.set(cacheKey, stock, CACHE_TTL.STOCK_PRICE);
   
-  res.json({
+  return res.json({
     success: true,
     data: stock
   });
@@ -54,7 +54,7 @@ export const getChartData = catchAsync(async (req: Request, res: Response) => {
   // Cache the result
   cacheService.set(cacheKey, chartData, CACHE_TTL.STOCK_CHART);
   
-  res.json({
+  return res.json({
     success: true,
     data: chartData
   });
@@ -70,7 +70,7 @@ export const getChartImage = catchAsync(async (req: Request, res: Response) => {
     period as 'day' | 'week' | 'month' | '3month' | 'year'
   );
   
-  res.json({
+  return res.json({
     success: true,
     data: {
       image: imageBase64
@@ -85,7 +85,7 @@ export const getStockNews = catchAsync(async (req: Request, res: Response) => {
   
   const news = await realStockService.getStockNews(symbol, parseInt(limit as string));
   
-  res.json({
+  return res.json({
     success: true,
     data: news
   });
@@ -97,7 +97,7 @@ export const getFinancialData = catchAsync(async (req: Request, res: Response) =
   
   const financialData = await realStockService.getFinancialData(symbol);
   
-  res.json({
+  return res.json({
     success: true,
     data: financialData
   });
@@ -109,7 +109,7 @@ export const getOrderbook = catchAsync(async (req: Request, res: Response) => {
   
   const orderbook = await realStockService.getOrderbook(symbol);
   
-  res.json({
+  return res.json({
     success: true,
     data: orderbook
   });
@@ -121,7 +121,7 @@ export const getPopularStocks = catchAsync(async (req: Request, res: Response) =
   
   const stocks = await realStockService.getPopularStocks(market as 'KOSPI' | 'KOSDAQ');
   
-  res.json({
+  return res.json({
     success: true,
     data: stocks
   });
@@ -133,7 +133,7 @@ export const initializeStock = catchAsync(async (req: Request, res: Response) =>
   
   const stock = await realStockService.initializeStockFromKIS(symbol);
   
-  res.json({
+  return res.json({
     success: true,
     data: stock
   });
