@@ -34,16 +34,18 @@ function App() {
 
   useEffect(() => {
     // Check for existing auth token and user data
-    const token = localStorage.getItem('accessToken');
+    const accessToken = localStorage.getItem('accessToken');
+    const refreshToken = localStorage.getItem('refreshToken');
     const userStr = localStorage.getItem('user');
     
-    if (token && userStr) {
+    if (accessToken && refreshToken && userStr) {
       try {
         const user = JSON.parse(userStr);
-        dispatch(loginSuccess({ user, token }));
+        dispatch(loginSuccess({ user, accessToken, refreshToken }));
       } catch (error) {
         console.error('Failed to parse user data:', error);
         localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
         localStorage.removeItem('user');
       }
     }

@@ -79,8 +79,8 @@ export class PriceHistoryCollector {
               dayHigh: stock.dayHigh || stock.currentPrice,
               dayLow: stock.dayLow || stock.currentPrice,
               volume: stock.volume || BigInt(0),
-              change: stock.change,
-              changePercent: stock.changePercent,
+              change: stock.currentPrice - stock.previousClose,
+              changePercent: ((stock.currentPrice - stock.previousClose) / stock.previousClose) * 100,
               timestamp: new Date()
             }
           });

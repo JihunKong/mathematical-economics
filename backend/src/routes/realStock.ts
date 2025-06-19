@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { authenticate, authorize } from '../middleware/auth';
-import { smartRateLimiter } from '../middleware/smartRateLimiter';
+// import { smartRateLimiter } from '../middleware/smartRateLimiter';
 import * as realStockController from '../controllers/realStockController';
 
 const router = Router();
@@ -9,25 +9,25 @@ const router = Router();
 router.use(authenticate);
 
 // 실시간 주식 가격 조회
-router.get('/:symbol/price', smartRateLimiter, realStockController.getRealTimePrice);
+router.get('/:symbol/price', realStockController.getRealTimePrice);
 
 // 차트 데이터 조회
-router.get('/:symbol/chart', smartRateLimiter, realStockController.getChartData);
+router.get('/:symbol/chart', realStockController.getChartData);
 
 // 차트 이미지 조회
-router.get('/:symbol/chart-image', smartRateLimiter, realStockController.getChartImage);
+router.get('/:symbol/chart-image', realStockController.getChartImage);
 
 // 주식 뉴스 조회
-router.get('/:symbol/news', smartRateLimiter, realStockController.getStockNews);
+router.get('/:symbol/news', realStockController.getStockNews);
 
 // 재무 데이터 조회
-router.get('/:symbol/financial', smartRateLimiter, realStockController.getFinancialData);
+router.get('/:symbol/financial', realStockController.getFinancialData);
 
 // 호가 정보 조회
-router.get('/:symbol/orderbook', smartRateLimiter, realStockController.getOrderbook);
+router.get('/:symbol/orderbook', realStockController.getOrderbook);
 
 // 인기 종목 조회
-router.get('/popular/list', smartRateLimiter, realStockController.getPopularStocks);
+router.get('/popular/list', realStockController.getPopularStocks);
 
 // 교사와 관리자만 접근 가능한 엔드포인트
 router.use(authorize('TEACHER', 'ADMIN'));

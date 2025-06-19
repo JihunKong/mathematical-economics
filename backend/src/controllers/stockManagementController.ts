@@ -114,8 +114,6 @@ export const searchStocks = catchAsync(async (req: AuthenticatedRequest, res: Re
       isTracked: true,
       currentPrice: true,
       previousClose: true,
-      change: true,
-      changePercent: true,
       updatedAt: true
     }
   });

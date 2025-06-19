@@ -37,7 +37,7 @@ export default function LoginPage() {
       localStorage.setItem('refreshToken', refreshToken);
       localStorage.setItem('user', JSON.stringify(user));
 
-      dispatch(loginSuccess({ user, token: accessToken }));
+      dispatch(loginSuccess({ user, accessToken, refreshToken }));
       toast.success('로그인 성공!');
       
       // Redirect based on user role
