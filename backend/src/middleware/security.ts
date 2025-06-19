@@ -115,7 +115,7 @@ export async function securityMiddleware(
   req: Request,
   res: Response,
   next: NextFunction
-) {
+): Promise<void> {
   const clientIp = getClientIp(req);
   
   try {
@@ -175,6 +175,7 @@ export async function securityMiddleware(
       message: 'Too many requests',
       retryAfter: Math.round((rateLimiterRes as any).msBeforeNext / 1000) || 60,
     });
+    return;
   }
 }
 
