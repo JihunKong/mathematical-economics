@@ -2,6 +2,9 @@ FROM node:20-alpine
 
 WORKDIR /app
 
+# Install OpenSSL and other dependencies needed for Prisma
+RUN apk add --no-cache openssl libc6-compat
+
 # Copy package files
 COPY package*.json ./
 
@@ -11,7 +14,14 @@ RUN npm ci
 # Copy source code
 COPY . .
 
-# Generate Prisma client
+# Set Prisma binary targets for Alpine Linux
+ENV PRISMA_QUERY_ENGINE_BINARY=/app/node_modules/.prisma/client/libquery_engine-linux-musl.so.node
+ENV PRISMA_QUERY_ENGINE_LIBRARY=/app/node_modules/.prisma/client/libquery_engine-linux-musl.so.node
+ENV PRISMA_MIGRATION_ENGINE_BINARY=/app/node_modules/@prisma/engines/migration-engine-linux-musl
+ENV PRISMA_INTROSPECTION_ENGINE_BINARY=/app/node_modules/@prisma/engines/introspection-engine-linux-musl
+ENV PRISMA_FMT_BINARY=/app/node_modules/@prisma/engines/prisma-fmt-linux-musl
+
+# Generate Prisma client with correct binary target
 RUN npx prisma generate
 
 # Build application
@@ -19,6 +29,9 @@ RUN npm run build
 
 # Remove dev dependencies
 RUN npm prune --omit=dev
+
+# Regenerate Prisma client for production
+RUN npx prisma generate
 
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs && \
