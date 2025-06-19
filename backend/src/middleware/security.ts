@@ -122,20 +122,22 @@ export async function securityMiddleware(
     // 차단된 IP 확인
     if (blockedIPs.has(clientIp)) {
       logger.warn('Blocked IP attempted access', { ip: clientIp });
-      return res.status(403).json({ 
+      res.status(403).json({ 
         success: false, 
         message: 'Access denied' 
       });
+      return;
     }
     
     // Redis에서 차단된 IP 확인
     if (redis) {
       const isBlocked = await redis.get(`blocked:${clientIp}`);
       if (isBlocked) {
-        return res.status(403).json({ 
+        res.status(403).json({ 
           success: false, 
           message: 'Access denied' 
         });
+        return;
       }
     }
     
@@ -154,10 +156,11 @@ export async function securityMiddleware(
         userAgent: req.get('user-agent'),
       });
       
-      return res.status(403).json({ 
+      res.status(403).json({ 
         success: false, 
         message: 'Forbidden' 
       });
+      return;
     }
     
     // Rate limiting 적용
@@ -184,7 +187,7 @@ export async function loginRateLimiter(
   req: Request,
   res: Response,
   next: NextFunction
-) {
+): Promise<void> {
   const clientIp = getClientIp(req);
   const email = req.body.email || 'unknown';
   const key = `${clientIp}:${email}`;
@@ -203,6 +206,7 @@ export async function loginRateLimiter(
       message: 'Too many login attempts. Please try again later.',
       retryAfter: Math.round((rateLimiterRes as any).msBeforeNext / 1000) || 3600,
     });
+    return;
   }
 }
 
