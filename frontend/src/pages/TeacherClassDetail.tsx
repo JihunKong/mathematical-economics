@@ -465,7 +465,9 @@ export default function TeacherClassDetail() {
                         const stocksToAdd = newStocks.slice(0, availableSlots);
                         
                         if (stocksToAdd.length < newStocks.length) {
-                          toast.warning(`50개 제한으로 인해 ${stocksToAdd.length}개만 추가되었습니다.`);
+                          toast(`50개 제한으로 인해 ${stocksToAdd.length}개만 추가되었습니다.`, {
+                            icon: '⚠️',
+                          });
                         }
                         
                         setSelectedStocks(prev => [...prev, ...stocksToAdd]);
