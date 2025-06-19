@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { authenticate, authorize } from '../middleware/auth';
+import { stockRateLimiter } from '../middleware/rateLimiter';
 import * as realStockController from '../controllers/realStockController';
 
 const router = Router();
@@ -8,25 +9,25 @@ const router = Router();
 router.use(authenticate);
 
 // 실시간 주식 가격 조회
-router.get('/:symbol/price', realStockController.getRealTimePrice);
+router.get('/:symbol/price', stockRateLimiter, realStockController.getRealTimePrice);
 
 // 차트 데이터 조회
-router.get('/:symbol/chart', realStockController.getChartData);
+router.get('/:symbol/chart', stockRateLimiter, realStockController.getChartData);
 
 // 차트 이미지 조회
-router.get('/:symbol/chart-image', realStockController.getChartImage);
+router.get('/:symbol/chart-image', stockRateLimiter, realStockController.getChartImage);
 
 // 주식 뉴스 조회
-router.get('/:symbol/news', realStockController.getStockNews);
+router.get('/:symbol/news', stockRateLimiter, realStockController.getStockNews);
 
 // 재무 데이터 조회
-router.get('/:symbol/financial', realStockController.getFinancialData);
+router.get('/:symbol/financial', stockRateLimiter, realStockController.getFinancialData);
 
 // 호가 정보 조회
-router.get('/:symbol/orderbook', realStockController.getOrderbook);
+router.get('/:symbol/orderbook', stockRateLimiter, realStockController.getOrderbook);
 
 // 인기 종목 조회
-router.get('/popular/list', realStockController.getPopularStocks);
+router.get('/popular/list', stockRateLimiter, realStockController.getPopularStocks);
 
 // 교사와 관리자만 접근 가능한 엔드포인트
 router.use(authorize('TEACHER', 'ADMIN'));
