@@ -40,7 +40,7 @@ check_status() {
     cd $PROJECT_DIR
     
     echo -e "\n=== 컨테이너 상태 ==="
-    docker-compose ps
+    docker compose ps
     
     echo -e "\n=== 디스크 사용량 ==="
     df -h | grep -E "^/dev|^Filesystem"
@@ -52,7 +52,7 @@ check_status() {
     top -bn1 | grep "Cpu(s)" | sed "s/.*, *\([0-9.]*\)%* id.*/\1/" | awk '{print "CPU 사용률: " 100 - $1"%"}'
     
     echo -e "\n=== 최근 에러 로그 ==="
-    docker-compose logs backend 2>&1 | grep -i error | tail -5
+    docker compose logs backend 2>&1 | grep -i error | tail -5
 }
 
 # 로그 확인
@@ -62,10 +62,10 @@ view_logs() {
     cd $PROJECT_DIR
     
     echo -e "\n=== Backend 로그 (최근 50줄) ==="
-    docker-compose logs backend --tail=50
+    docker compose logs backend --tail=50
     
     echo -e "\n=== Frontend 로그 (최근 20줄) ==="
-    docker-compose logs frontend --tail=20
+    docker compose logs frontend --tail=20
 }
 
 # 서비스 재시작
@@ -73,9 +73,9 @@ restart_service() {
     echo -e "${YELLOW}🔄 서비스 재시작 중...${NC}"
     
     cd $PROJECT_DIR
-    docker-compose restart
+    docker compose restart
     sleep 10
-    docker-compose ps
+    docker compose ps
     
     echo -e "${GREEN}✅ 서비스 재시작 완료${NC}"
 }
@@ -96,13 +96,13 @@ update_code() {
     
     # Docker 컨테이너 재빌드 및 재시작
     echo "🔨 컨테이너 재빌드 중..."
-    docker-compose down
-    docker-compose build --no-cache
-    docker-compose up -d
+    docker compose down
+    docker compose build --no-cache
+    docker compose up -d
     
     # 헬스체크
     sleep 10
-    docker-compose ps
+    docker compose ps
     
     echo -e "${GREEN}✅ 업데이트 완료!${NC}"
 }
@@ -118,7 +118,7 @@ backup_database() {
     mkdir -p ~/backups
     
     # PostgreSQL 백업
-    docker-compose exec -T postgres pg_dump -U mathuser mathematical_economics > ~/backups/backup_${BACKUP_DATE}.sql
+    docker compose exec -T postgres pg_dump -U mathuser mathematical_economics > ~/backups/backup_${BACKUP_DATE}.sql
     
     # 백업 파일 압축
     gzip ~/backups/backup_${BACKUP_DATE}.sql
@@ -161,15 +161,15 @@ check_blocked_ips() {
     
     # Redis에서 차단된 IP 조회
     echo "=== Redis에 저장된 차단 IP ==="
-    docker-compose exec redis redis-cli --scan --pattern "blocked:*" | while read key; do
+    docker compose exec redis redis-cli --scan --pattern "blocked:*" | while read key; do
         ip=${key#blocked:}
-        ttl=$(docker-compose exec redis redis-cli TTL "$key" | tr -d '\r')
+        ttl=$(docker compose exec redis redis-cli TTL "$key" | tr -d '\r')
         echo "IP: $ip (남은 시간: ${ttl}초)"
     done
     
     # 최근 차단 로그
     echo -e "\n=== 최근 차단 활동 ==="
-    docker-compose logs backend 2>&1 | grep -i "blocked\|suspicious" | tail -10
+    docker compose logs backend 2>&1 | grep -i "blocked\|suspicious" | tail -10
 }
 
 # 실시간 모니터링
@@ -187,13 +187,13 @@ monitor_realtime() {
     # 실시간 모니터링
     watch -n 2 '
         echo "=== 컨테이너 상태 ==="
-        docker-compose ps
+        docker compose ps
         echo ""
         echo "=== CPU/메모리 사용량 ==="
         docker stats --no-stream --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}"
         echo ""
         echo "=== 최근 요청 ==="
-        docker-compose logs backend --tail=5 2>&1 | grep -E "GET|POST|PUT|DELETE"
+        docker compose logs backend --tail=5 2>&1 | grep -E "GET|POST|PUT|DELETE"
     '
 }
 
