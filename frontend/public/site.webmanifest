@@ -1,0 +1,33 @@
+{
+  "name": "경제수학 모의 주식 거래 앱",
+  "short_name": "경제수학",
+  "description": "경제수학 수업을 위한 모의 주식 거래 플랫폼",
+  "icons": [
+    {
+      "src": "/favicon-16x16.png",
+      "sizes": "16x16",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon-32x32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#1f2937",
+  "background_color": "#ffffff",
+  "scope": "/"
+}

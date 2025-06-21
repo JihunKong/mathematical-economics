@@ -44,6 +44,8 @@ services:
       DATABASE_URL: postgresql://mathuser:mathpass123@mathematical-economics-postgres:5432/mathematical_economics
       REDIS_URL: redis://mathematical-economics-redis:6379
       CORS_ORIGIN: https://경제교실.com,https://xn--289aykm66cwye.com,https://www.경제교실.com,https://www.xn--289aykm66cwye.com
+      JWT_SECRET: ciQVI2bSK04ecciOY50057W2Y8d6y3St/qSxRlD3Bao=
+      JWT_EXPIRES_IN: 7d
     depends_on:
       postgres:
         condition: service_healthy
