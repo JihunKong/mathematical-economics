@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom';
-import { useAppSelector } from '@/hooks/useRedux';
+import { useAppSelector, useAppDispatch } from '@/hooks/useRedux';
+import { toggleSidebar } from '@/store/uiSlice';
 import clsx from 'clsx';
 
 const menuItems = [
@@ -84,6 +85,7 @@ const adminMenuItems = [
 ];
 
 export default function Sidebar() {
+  const dispatch = useAppDispatch();
   const { sidebarOpen } = useAppSelector((state) => state.ui);
   const { user } = useAppSelector((state) => state.auth);
   const { cash } = useAppSelector((state) => state.portfolio);
@@ -106,48 +108,64 @@ export default function Sidebar() {
   }
 
   return (
-    <aside
-      className={clsx(
-        'fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-200 ease-in-out lg:translate-x-0 lg:static lg:inset-0',
-        {
-          'translate-x-0': sidebarOpen,
-          '-translate-x-full': !sidebarOpen,
-        }
+    <>
+      {/* Mobile overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          onClick={() => dispatch(toggleSidebar())}
+        />
       )}
-    >
-      <div className="h-full px-3 py-4 overflow-y-auto">
-        <nav className="space-y-2">
-          {allMenuItems.map((item) => (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              className={({ isActive }) =>
-                clsx(
-                  'flex items-center p-2 rounded-lg transition-colors',
-                  {
-                    'bg-primary-100 text-primary-700': isActive,
-                    'text-gray-700 hover:bg-gray-100': !isActive,
-                  }
-                )
-              }
-            >
-              {item.icon}
-              <span className="ml-3">{item.title}</span>
-            </NavLink>
-          ))}
-        </nav>
-
-        {isStudent && (
-          <div className="mt-auto pt-4 border-t border-gray-200">
-            <div className="px-2 py-3 bg-gray-50 rounded-lg">
-              <p className="text-sm font-medium text-gray-700">보유 현금</p>
-              <p className="text-lg font-bold text-primary-600">
-                ₩{cash.toLocaleString('ko-KR')}
-              </p>
-            </div>
-          </div>
+      
+      <aside
+        className={clsx(
+          'fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-200 ease-in-out lg:static lg:inset-0',
+          {
+            'translate-x-0': sidebarOpen,
+            '-translate-x-full': !sidebarOpen,
+          }
         )}
-      </div>
-    </aside>
+      >
+        <div className="h-full px-3 py-4 overflow-y-auto">
+          <nav className="space-y-2">
+            {allMenuItems.map((item) => (
+              <NavLink
+                key={item.path}
+                to={item.path}
+                className={({ isActive }) =>
+                  clsx(
+                    'flex items-center p-2 rounded-lg transition-colors',
+                    {
+                      'bg-primary-100 text-primary-700': isActive,
+                      'text-gray-700 hover:bg-gray-100': !isActive,
+                    }
+                  )
+                }
+                onClick={() => {
+                  // Close sidebar on mobile after navigation
+                  if (window.innerWidth < 1024) {
+                    dispatch(toggleSidebar());
+                  }
+                }}
+              >
+                {item.icon}
+                <span className="ml-3">{item.title}</span>
+              </NavLink>
+            ))}
+          </nav>
+
+          {isStudent && (
+            <div className="mt-auto pt-4 border-t border-gray-200">
+              <div className="px-2 py-3 bg-gray-50 rounded-lg">
+                <p className="text-sm font-medium text-gray-700">보유 현금</p>
+                <p className="text-lg font-bold text-primary-600">
+                  ₩{cash.toLocaleString('ko-KR')}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      </aside>
+    </>
   );
 }

@@ -19,7 +19,7 @@ interface UiState {
 }
 
 const initialState: UiState = {
-  sidebarOpen: true,
+  sidebarOpen: window.innerWidth >= 1024, // Start closed on mobile, open on desktop
   theme: 'light',
   modal: {
     isOpen: false,

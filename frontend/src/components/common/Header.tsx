@@ -22,10 +22,10 @@ export default function Header() {
       <div className="px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center">
-            {isAuthenticated && (
+            {isAuthenticated && user?.role === 'STUDENT' && (
               <button
                 onClick={() => dispatch(toggleSidebar())}
-                className="p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 lg:hidden"
+                className="p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100"
               >
                 <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   {sidebarOpen ? (
