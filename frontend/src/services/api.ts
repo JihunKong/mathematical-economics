@@ -100,9 +100,11 @@ class ApiService {
         } else if (error.response?.status === 403) {
           // For 403 errors, don't show toast - let calling component handle it
           console.log('API Interceptor: 403 error, not showing toast, letting component handle');
+          // IMPORTANT: Don't call toast.error here, just let the error propagate
         } else if (error.response?.status === 423) {
           // For 423 errors, don't show toast - let calling component handle it  
           console.log('API Interceptor: 423 error, not showing toast, letting component handle');
+          // IMPORTANT: Don't call toast.error here, just let the error propagate
         } else {
           // Default error toast for other errors
           console.log('API Interceptor: Showing default error toast');
