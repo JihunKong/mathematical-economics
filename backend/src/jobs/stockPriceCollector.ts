@@ -6,8 +6,8 @@ import { logger } from '../utils/logger';
 export class StockPriceCollector {
   private aggregatedService: AggregatedStockService;
   private isRunning: boolean = false;
-  private batchSize: number = 5; // Process 5 stocks at a time
-  private delayBetweenBatches: number = 2000; // 2 seconds between batches
+  private batchSize: number = 3; // Process 3 stocks at a time (더 작은 배치)
+  private delayBetweenBatches: number = 5000; // 5 seconds between batches (더 긴 지연)
 
   constructor() {
     this.aggregatedService = new AggregatedStockService();
@@ -15,14 +15,31 @@ export class StockPriceCollector {
 
   // Start the price collection job
   startCollector() {
-    // Run every minute (with 5 second offset to avoid exact minute boundaries)
-    cron.schedule('5 * * * * *', async () => {
+    // 시장 시간 중에만 자주 실행 (09:00-15:30, 10분마다)
+    // 시장 외 시간에는 30분마다 실행
+    
+    // 시장 시간: 평일 09:00-15:30, 10분마다
+    cron.schedule('*/10 9-15 * * 1-5', async () => {
       if (!this.isRunning) {
         await this.collectPrices();
       }
     });
     
-    logger.info('Stock price collector started - will run every minute at :05 seconds');
+    // 시장 외 시간: 30분마다 (주말 포함)
+    cron.schedule('*/30 * * * *', async () => {
+      const now = new Date();
+      const hour = now.getHours();
+      const day = now.getDay(); // 0 = Sunday, 6 = Saturday
+      
+      // 평일 시장 시간이 아닐 때만 실행
+      if (day === 0 || day === 6 || hour < 9 || hour > 15) {
+        if (!this.isRunning) {
+          await this.collectPrices();
+        }
+      }
+    });
+    
+    logger.info('Stock price collector started - market hours: every 10min, off-hours: every 30min');
   }
 
   // Collect prices for all tracked stocks

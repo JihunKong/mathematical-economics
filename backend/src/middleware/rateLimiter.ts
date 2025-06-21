@@ -15,12 +15,17 @@ export const rateLimiter = rateLimit({
   }
 });
 
-// More strict rate limiter for auth endpoints
+// Rate limiter for auth endpoints - 크롤러와 분리
 export const authRateLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // Limit each IP to 5 requests per windowMs
+  windowMs: 5 * 60 * 1000, // 5 minutes
+  max: 50, // IP당 5분에 50번 (충분히 관대함)
   message: 'Too many authentication attempts, please try again later.',
-  skipSuccessfulRequests: true // Don't count successful requests
+  skipSuccessfulRequests: true, // 성공한 요청은 카운트하지 않음
+  skip: (req) => {
+    // 로컬호스트나 내부 크롤러는 제외
+    const ip = req.ip || req.connection.remoteAddress;
+    return ip === '127.0.0.1' || ip === '::1' || ip?.includes('127.0.0.1');
+  }
 });
 
 // 주식 관련 엔드포인트를 위한 더 관대한 rate limiter
