@@ -158,15 +158,13 @@ class ApiService {
     return response.data;
   }
 
-  // Trading endpoints
+  // Trading endpoints - DISABLED: Using direct fetch in components
   async buyStock(symbol: string, quantity: number, reason?: string) {
-    const response = await this.api.post('/trading/buy', { symbol, quantity, reason });
-    return response.data;
+    throw new Error('buyStock is disabled - use direct fetch in components');
   }
 
   async sellStock(symbol: string, quantity: number, reason?: string) {
-    const response = await this.api.post('/trading/sell', { symbol, quantity, reason });
-    return response.data;
+    throw new Error('sellStock is disabled - use direct fetch in components');
   }
 
   async getTransactionHistory(limit?: number) {
