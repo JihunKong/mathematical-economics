@@ -37,10 +37,10 @@ export const requireWatchlist = async (req: Request, res: Response, next: NextFu
       });
     }
 
-    next();
+    return next();
   } catch (error) {
     logger.error('Error in watchlist guard middleware:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Internal server error'
     });
@@ -93,10 +93,10 @@ export const requireFreshPrice = async (req: Request, res: Response, next: NextF
       });
     }
 
-    next();
+    return next();
   } catch (error) {
     logger.error('Error in fresh price middleware:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Internal server error'
     });
