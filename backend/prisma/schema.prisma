@@ -18,8 +18,8 @@ model User {
   name             String
   role             UserRole       @default(STUDENT)
   isActive         Boolean        @default(false) // Requires admin approval
-  initialCapital   Float          @default(10000000) // Starting with 10 million won
-  currentCash      Float          @default(10000000)
+  initialCapital   Float?         @default(10000000) // Starting with 10 million won (null for ADMIN/TEACHER)
+  currentCash      Float?         @default(10000000) // Current cash (null for ADMIN/TEACHER)
   hasSelectedWatchlist Boolean    @default(false) // Whether student has selected watchlist
   lastWatchlistChange DateTime?   // Last time watchlist was changed
   createdAt        DateTime       @default(now())
