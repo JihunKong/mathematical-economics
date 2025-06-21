@@ -5,7 +5,7 @@ import api from '@/services/api';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 import RealtimePriceCard from '@/components/stock/RealtimePriceCard';
 import MiniChart from '@/components/stock/MiniChart';
-import { Link, Navigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { TrendingUp, TrendingDown, ArrowRight, RefreshCw } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -29,7 +29,9 @@ interface TopStock {
 export default function DashboardPage() {
   const { user } = useAppSelector((state) => state.auth);
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const [portfolio, setPortfolio] = useState<PortfolioSummary | null>(null);
+  const [needsWatchlist, setNeedsWatchlist] = useState(false);
   
   // Redirect teachers to their dashboard
   if (user && user.role === 'TEACHER') {
@@ -56,8 +58,13 @@ export default function DashboardPage() {
         // Redux store 업데이트로 사이드바 현금 표시 동기화
         dispatch(updateCash(portfolioRes.data.cash));
         setTopStocks(stocksRes.data.slice(0, 5));
-      } catch (error) {
+      } catch (error: any) {
         console.error('Failed to fetch dashboard data:', error);
+        
+        // Check if it's a watchlist requirement error (403)
+        if (error?.response?.status === 403 && error?.response?.data?.code === 'WATCHLIST_REQUIRED') {
+          setNeedsWatchlist(true);
+        }
       } finally {
         setIsLoading(false);
       }
@@ -65,6 +72,31 @@ export default function DashboardPage() {
 
     fetchData();
   }, [dispatch]);
+
+  // Handle watchlist requirement
+  if (needsWatchlist) {
+    return (
+      <div className="max-w-2xl mx-auto mt-16 p-8 bg-white rounded-lg shadow-lg">
+        <div className="text-center">
+          <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 mb-4">
+            <TrendingUp className="h-6 w-6 text-blue-600" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">관심종목을 선택해주세요</h2>
+          <p className="text-gray-600 mb-8">
+            거래를 시작하기 전에 관심있는 종목을 선택해주세요.<br />
+            선택한 종목들의 가격이 실시간으로 업데이트됩니다.
+          </p>
+          <button
+            onClick={() => navigate('/watchlist-setup')}
+            className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            관심종목 선택하기
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return <LoadingSpinner size="lg" className="h-64" />;

@@ -22,6 +22,7 @@ import StockDetailPage from './pages/StockDetailPage';
 import AdminPage from './pages/AdminPage';
 import StockManagement from './pages/StockManagement';
 import StockManagementEnhanced from './pages/StockManagementEnhanced';
+import WatchlistSetupPage from './pages/WatchlistSetupPage';
 
 // Protected Route Component
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -59,6 +60,14 @@ function App() {
           <Route index element={<HomePage />} />
           <Route path="login" element={<LoginPage />} />
           <Route path="register" element={<RegisterPage />} />
+          <Route
+            path="watchlist-setup"
+            element={
+              <ProtectedRoute>
+                <WatchlistSetupPage />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="dashboard"
             element={

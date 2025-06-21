@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '@/hooks/useRedux';
 import { updateCash } from '@/store/portfolioSlice';
 import { useStockPrices } from '@/hooks/useStockPrices';
@@ -35,10 +35,12 @@ interface Holding {
 
 export default function TradingPage() {
   const { user } = useAppSelector((state) => state.auth);
+  const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const [stocks, setStocks] = useState<Stock[]>([]);
   const [holdings, setHoldings] = useState<Holding[]>([]);
   const [loading, setLoading] = useState(true);
+  const [needsWatchlist, setNeedsWatchlist] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStock, setSelectedStock] = useState<Stock | null>(null);
   const [tradeMode, setTradeMode] = useState<'buy' | 'sell'>('buy');
@@ -99,9 +101,15 @@ export default function TradingPage() {
       
       // Redux store 업데이트
       dispatch(updateCash(portfolioRes.data.cash));
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to fetch data:', error);
-      toast.error('데이터를 불러오는데 실패했습니다');
+      
+      // Check if it's a watchlist requirement error (403)
+      if (error?.response?.status === 403 && error?.response?.data?.code === 'WATCHLIST_REQUIRED') {
+        setNeedsWatchlist(true);
+      } else {
+        toast.error('데이터를 불러오는데 실패했습니다');
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -176,6 +184,31 @@ export default function TradingPage() {
       currency: 'KRW',
     }).format(amount);
   };
+
+  // Handle watchlist requirement
+  if (needsWatchlist) {
+    return (
+      <div className="max-w-2xl mx-auto mt-16 p-8 bg-white rounded-lg shadow-lg">
+        <div className="text-center">
+          <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 mb-4">
+            <TrendingUp className="h-6 w-6 text-blue-600" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">관심종목을 선택해주세요</h2>
+          <p className="text-gray-600 mb-8">
+            거래를 시작하기 전에 관심있는 종목을 선택해주세요.<br />
+            선택한 종목들의 가격이 실시간으로 업데이트됩니다.
+          </p>
+          <button
+            onClick={() => navigate('/watchlist-setup')}
+            className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            관심종목 선택하기
+            <TrendingUp className="ml-2 h-4 w-4" />
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) return <LoadingSpinner />;
 

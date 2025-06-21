@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { useAppSelector } from '@/hooks/useRedux';
 import api from '@/services/api';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
@@ -49,9 +49,11 @@ interface Transaction {
 
 export default function PortfolioPage() {
   const { user } = useAppSelector((state) => state.auth);
+  const navigate = useNavigate();
   const [portfolio, setPortfolio] = useState<Portfolio | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [needsWatchlist, setNeedsWatchlist] = useState(false);
   const [activeTab, setActiveTab] = useState<'overview' | 'holdings' | 'history'>('overview');
 
   // Redirect admin users to admin page
@@ -72,9 +74,15 @@ export default function PortfolioPage() {
       
       setPortfolio(portfolioRes.data);
       setTransactions(transactionsRes.data);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to fetch portfolio:', error);
-      toast.error('포트폴리오를 불러오는데 실패했습니다');
+      
+      // Check if it's a watchlist requirement error (403)
+      if (error?.response?.status === 403 && error?.response?.data?.code === 'WATCHLIST_REQUIRED') {
+        setNeedsWatchlist(true);
+      } else {
+        toast.error('포트폴리오를 불러오는데 실패했습니다');
+      }
     } finally {
       setLoading(false);
     }
@@ -101,6 +109,31 @@ export default function PortfolioPage() {
       minute: '2-digit'
     });
   };
+
+  // Handle watchlist requirement
+  if (needsWatchlist) {
+    return (
+      <div className="max-w-2xl mx-auto mt-16 p-8 bg-white rounded-lg shadow-lg">
+        <div className="text-center">
+          <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 mb-4">
+            <PieChart className="h-6 w-6 text-blue-600" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">관심종목을 선택해주세요</h2>
+          <p className="text-gray-600 mb-8">
+            포트폴리오를 보기 전에 관심있는 종목을 선택해주세요.<br />
+            선택한 종목들의 가격이 실시간으로 업데이트됩니다.
+          </p>
+          <button
+            onClick={() => navigate('/watchlist-setup')}
+            className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            관심종목 선택하기
+            <PieChart className="ml-2 h-4 w-4" />
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) return <LoadingSpinner />;
   if (!portfolio) return <div>포트폴리오 정보가 없습니다.</div>;
