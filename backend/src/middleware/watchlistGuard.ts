@@ -50,18 +50,22 @@ export const requireWatchlist = async (req: Request, res: Response, next: NextFu
 // Check if stock price is fresh (within 24 hours) before trading
 export const requireFreshPrice = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { stockId } = req.body;
+    const { symbol, stockId } = req.body;
+    
+    // Support both symbol and stockId
+    const stockIdentifier = symbol || stockId;
 
-    if (!stockId) {
+    if (!stockIdentifier) {
       return res.status(400).json({
         success: false,
-        message: 'Stock ID is required'
+        message: 'Stock symbol or ID is required'
       });
     }
 
-    const stock = await prisma.stock.findUnique({
-      where: { id: stockId },
+    const stock = await prisma.stock.findFirst({
+      where: symbol ? { symbol } : { id: stockId },
       select: { 
+        id: true,
         lastPriceUpdate: true,
         symbol: true,
         name: true 
@@ -85,12 +89,17 @@ export const requireFreshPrice = async (req: Request, res: Response, next: NextF
         message: `Stock price for ${stock.name} (${stock.symbol}) is not fresh. Please wait for price update.`,
         code: 'PRICE_NOT_FRESH',
         data: {
-          stockId,
+          stockId: stock.id,
           symbol: stock.symbol,
           name: stock.name,
           lastUpdate: stock.lastPriceUpdate
         }
       });
+    }
+
+    // Add stockId to request body if only symbol was provided
+    if (symbol && !stockId) {
+      req.body.stockId = stock.id;
     }
 
     return next();

@@ -4,8 +4,8 @@ import { logger } from '../utils/logger';
 const prisma = new PrismaClient();
 
 export class WatchlistService {
-  // Get available stocks for watchlist selection
-  async getAvailableStocks(search?: string, market?: string, limit: number = 50) {
+  // Get available stocks for watchlist selection with pagination
+  async getAvailableStocks(search?: string, market?: string, limit: number = 20, page: number = 1) {
     try {
       const where: any = {
         isActive: true
@@ -21,6 +21,12 @@ export class WatchlistService {
       if (market && market !== 'ALL') {
         where.market = market;
       }
+
+      // Get total count for pagination
+      const total = await prisma.stock.count({ where });
+
+      // Calculate offset
+      const skip = (page - 1) * limit;
 
       const stocks = await prisma.stock.findMany({
         where,
@@ -39,10 +45,14 @@ export class WatchlistService {
           { market: 'asc' },
           { name: 'asc' }
         ],
+        skip,
         take: limit
       });
 
-      return stocks;
+      return {
+        stocks,
+        total
+      };
     } catch (error) {
       logger.error('Error getting available stocks:', error);
       throw new Error('Failed to get available stocks');
@@ -393,6 +403,182 @@ export class WatchlistService {
       logger.error('Error getting market stats:', error);
       throw new Error('Failed to get market statistics');
     }
+  }
+
+  // Preset: Get top 10 stocks by market cap
+  async getTop10Stocks() {
+    try {
+      // Get top 10 stocks by market cap (simplified - in real app, you'd have market cap data)
+      // For now, we'll get popular KOSPI stocks
+      const stocks = await prisma.stock.findMany({
+        where: {
+          market: 'KOSPI',
+          symbol: {
+            in: [
+              '005930', // Samsung Electronics
+              '000660', // SK Hynix
+              '373220', // LG Energy Solution
+              '207940', // Samsung Biologics
+              '005935', // Samsung Electronics (preferred)
+              '005490', // POSCO
+              '006400', // Samsung SDI
+              '051910', // LG Chem
+              '035420', // NAVER
+              '000270'  // Kia
+            ]
+          }
+        },
+        select: {
+          id: true,
+          symbol: true,
+          name: true,
+          market: true,
+          sector: true,
+          currentPrice: true,
+          change: true,
+          changePercent: true,
+          lastPriceUpdate: true
+        }
+      });
+
+      return this.transformStockData(stocks);
+    } catch (error) {
+      logger.error('Error getting top 10 stocks:', error);
+      throw error;
+    }
+  }
+
+  // Preset: Get random stocks
+  async getRandomStocks(count: number = 10) {
+    try {
+      // Get total count
+      const totalCount = await prisma.stock.count({
+        where: { isActive: true }
+      });
+      
+      // Generate random indices
+      const randomIndices = new Set<number>();
+      while (randomIndices.size < Math.min(count, totalCount)) {
+        randomIndices.add(Math.floor(Math.random() * totalCount));
+      }
+
+      // Get stocks at random indices
+      const stocks = await prisma.stock.findMany({
+        where: { isActive: true },
+        skip: 0,
+        take: totalCount,
+        select: {
+          id: true,
+          symbol: true,
+          name: true,
+          market: true,
+          sector: true,
+          currentPrice: true,
+          change: true,
+          changePercent: true,
+          lastPriceUpdate: true
+        }
+      });
+
+      // Select random stocks
+      const selectedStocks = Array.from(randomIndices).map(index => stocks[index]).filter(Boolean);
+
+      return this.transformStockData(selectedStocks.slice(0, count));
+    } catch (error) {
+      logger.error('Error getting random stocks:', error);
+      throw error;
+    }
+  }
+
+  // Preset: Get KOSPI leader stocks
+  async getKospiLeaders() {
+    try {
+      // Get major KOSPI companies by sector
+      const stocks = await prisma.stock.findMany({
+        where: {
+          market: 'KOSPI',
+          OR: [
+            { sector: '전기전자' },
+            { sector: '금융업' },
+            { sector: '화학' },
+            { sector: '운수장비' }
+          ]
+        },
+        select: {
+          id: true,
+          symbol: true,
+          name: true,
+          market: true,
+          sector: true,
+          currentPrice: true,
+          change: true,
+          changePercent: true,
+          lastPriceUpdate: true
+        },
+        take: 10,
+        orderBy: {
+          name: 'asc'
+        }
+      });
+
+      return this.transformStockData(stocks);
+    } catch (error) {
+      logger.error('Error getting KOSPI leaders:', error);
+      throw error;
+    }
+  }
+
+  // Preset: Get KOSDAQ promising stocks
+  async getKosdaqPromising() {
+    try {
+      // Get KOSDAQ stocks with good performance (simplified)
+      const stocks = await prisma.stock.findMany({
+        where: {
+          market: 'KOSDAQ',
+          OR: [
+            { sector: '제약' },
+            { sector: '소프트웨어' },
+            { sector: '게임' },
+            { sector: '바이오' }
+          ]
+        },
+        select: {
+          id: true,
+          symbol: true,
+          name: true,
+          market: true,
+          sector: true,
+          currentPrice: true,
+          change: true,
+          changePercent: true,
+          lastPriceUpdate: true
+        },
+        take: 10,
+        orderBy: {
+          name: 'asc'
+        }
+      });
+
+      return this.transformStockData(stocks);
+    } catch (error) {
+      logger.error('Error getting KOSDAQ promising stocks:', error);
+      throw error;
+    }
+  }
+
+  // Transform stock data with latest price
+  private transformStockData(stocks: any[]) {
+    return stocks.map(stock => ({
+      id: stock.id,
+      symbol: stock.symbol,
+      name: stock.name,
+      market: stock.market,
+      sector: stock.sector,
+      currentPrice: stock.currentPrice || 0,
+      change: stock.change || 0,
+      changePercent: stock.changePercent || 0,
+      lastPriceUpdate: stock.lastPriceUpdate
+    }));
   }
 }
 

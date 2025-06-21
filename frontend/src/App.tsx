@@ -1,8 +1,9 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useAppDispatch, useAppSelector } from './hooks/useRedux';
 import { loginSuccess } from './store/authSlice';
+import LoadingSpinner from './components/common/LoadingSpinner';
 
 // Layouts
 import MainLayout from './layouts/MainLayout';
@@ -27,33 +28,80 @@ import WatchlistSetupPage from './pages/WatchlistSetupPage';
 // Protected Route Component
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAppSelector((state) => state.auth);
+  
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
 }
 
 function App() {
   const dispatch = useAppDispatch();
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    // Check for existing auth token and user data
-    const accessToken = localStorage.getItem('accessToken');
-    const refreshToken = localStorage.getItem('refreshToken');
-    const userStr = localStorage.getItem('user');
-    
-    if (accessToken && refreshToken && userStr) {
-      try {
-        const user = JSON.parse(userStr);
-        dispatch(loginSuccess({ user, accessToken, refreshToken }));
-      } catch (error) {
-        console.error('Failed to parse user data:', error);
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('user');
+    const initAuth = async () => {
+      // Check for existing auth token and user data
+      const accessToken = localStorage.getItem('accessToken');
+      const refreshToken = localStorage.getItem('refreshToken');
+      const userStr = localStorage.getItem('user');
+      
+      if (accessToken && refreshToken && userStr) {
+        try {
+          const user = JSON.parse(userStr);
+          // Verify the token is not expired
+          const tokenPayload = JSON.parse(atob(accessToken.split('.')[1]));
+          const tokenExpiry = tokenPayload.exp * 1000;
+          
+          if (tokenExpiry > Date.now()) {
+            // Token is still valid
+            dispatch(loginSuccess({ user, accessToken, refreshToken }));
+          } else {
+            // Token expired, try to refresh
+            try {
+              const response = await fetch('/api/auth/refresh', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ refreshToken })
+              });
+              
+              if (response.ok) {
+                const data = await response.json();
+                const newAccessToken = data.data.accessToken;
+                localStorage.setItem('accessToken', newAccessToken);
+                dispatch(loginSuccess({ user, accessToken: newAccessToken, refreshToken }));
+              } else {
+                // Refresh failed, clear auth
+                localStorage.removeItem('accessToken');
+                localStorage.removeItem('refreshToken');
+                localStorage.removeItem('user');
+              }
+            } catch (error) {
+              console.error('Failed to refresh token:', error);
+              localStorage.removeItem('accessToken');
+              localStorage.removeItem('refreshToken');
+              localStorage.removeItem('user');
+            }
+          }
+        } catch (error) {
+          console.error('Failed to parse auth data:', error);
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('refreshToken');
+          localStorage.removeItem('user');
+        }
       }
-    }
+      
+      // Mark as initialized after checking auth
+      setIsInitialized(true);
+    };
+    
+    initAuth();
   }, [dispatch]);
+  
+  // Wait for initial auth check before rendering routes
+  if (!isInitialized) {
+    return <LoadingSpinner />;
+  }
 
   return (
-    <>
+    <div data-app-initialized="true">
       <Toaster position="top-right" />
       <Routes>
         <Route path="/" element={<MainLayout />}>
@@ -151,7 +199,7 @@ function App() {
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </>
+    </div>
   );
 }
 

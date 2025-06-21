@@ -110,30 +110,12 @@ export default function PortfolioPage() {
     });
   };
 
-  // Handle watchlist requirement
-  if (needsWatchlist) {
-    return (
-      <div className="max-w-2xl mx-auto mt-16 p-8 bg-white rounded-lg shadow-lg">
-        <div className="text-center">
-          <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 mb-4">
-            <PieChart className="h-6 w-6 text-blue-600" />
-          </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">관심종목을 선택해주세요</h2>
-          <p className="text-gray-600 mb-8">
-            포트폴리오를 보기 전에 관심있는 종목을 선택해주세요.<br />
-            선택한 종목들의 가격이 실시간으로 업데이트됩니다.
-          </p>
-          <button
-            onClick={() => navigate('/watchlist-setup')}
-            className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
-            관심종목 선택하기
-            <PieChart className="ml-2 h-4 w-4" />
-          </button>
-        </div>
-      </div>
-    );
-  }
+  // Auto redirect to watchlist setup for students without watchlist
+  useEffect(() => {
+    if (needsWatchlist && user?.role === 'STUDENT') {
+      navigate('/watchlist-setup');
+    }
+  }, [needsWatchlist, user, navigate]);
 
   if (loading) return <LoadingSpinner />;
   if (!portfolio) return <div>포트폴리오 정보가 없습니다.</div>;

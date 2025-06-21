@@ -74,24 +74,31 @@ const startServer = async () => {
       logger.info(`Server is running on port ${PORT}`);
       logger.info(`Environment: ${process.env.NODE_ENV}`);
       
-      // Start cron jobs for stock price updates
-      if (process.env.ENABLE_STOCK_UPDATER === 'true') {
-        startStockPriceUpdater();
-        
-        // Start new stock data updater
-        stockDataUpdater.start();
-        logger.info('Stock data updater service started');
-      }
-      
-      // Start stock price collector for tracked stocks
-      const stockCollector = getStockPriceCollector();
-      stockCollector.startCollector();
-      logger.info('Stock price collector started');
-      
-      // Start price history collector
-      const priceHistoryCollector = getPriceHistoryCollector();
-      priceHistoryCollector.start();
-      logger.info('Price history collector started');
+      // Delay background jobs to prevent server blocking on startup
+      setTimeout(async () => {
+        try {
+          // Start cron jobs for stock price updates
+          if (process.env.ENABLE_STOCK_UPDATER === 'true') {
+            startStockPriceUpdater();
+            
+            // Start new stock data updater
+            stockDataUpdater.start();
+            logger.info('Stock data updater service started');
+          }
+          
+          // Start stock price collector for tracked stocks
+          const stockCollector = getStockPriceCollector();
+          stockCollector.startCollector();
+          logger.info('Stock price collector started');
+          
+          // Start price history collector
+          const priceHistoryCollector = getPriceHistoryCollector();
+          priceHistoryCollector.start();
+          logger.info('Price history collector started');
+        } catch (error) {
+          logger.error('Error starting background jobs:', error);
+        }
+      }, 10000); // 10 seconds delay
     });
 
     // Graceful shutdown

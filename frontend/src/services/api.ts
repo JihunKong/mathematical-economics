@@ -47,10 +47,16 @@ class ApiService {
               return this.api(originalRequest);
             }
           } catch (refreshError) {
-            // Refresh failed, redirect to login
+            // Refresh failed, clear auth data
             localStorage.removeItem('accessToken');
             localStorage.removeItem('refreshToken');
-            window.location.href = '/login';
+            localStorage.removeItem('user');
+            
+            // Only redirect to login if not already on login page and not during initial load
+            const isInitializing = !document.querySelector('[data-app-initialized]');
+            if (!window.location.pathname.includes('/login') && !isInitializing) {
+              window.location.href = '/login';
+            }
           }
         }
 

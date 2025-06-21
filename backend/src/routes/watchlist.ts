@@ -17,28 +17,41 @@ const addStockSchema = Joi.object({
 });
 
 const getStocksSchema = Joi.object({
-  search: Joi.string().optional(),
-  market: Joi.string().valid('KOSPI', 'KOSDAQ', 'KOSDAQ GLOBAL', 'ALL').optional(),
-  limit: Joi.number().integer().min(1).max(100).optional()
+  search: Joi.string().allow('').optional(),
+  market: Joi.string().valid('KOSPI', 'KOSDAQ', 'KOSDAQ GLOBAL', 'KONEX', 'ALL').optional(),
+  limit: Joi.number().integer().min(1).max(100).optional(),
+  page: Joi.number().integer().min(1).optional()
 });
 
 // Get available stocks for selection
 router.get('/stocks', authenticate, async (req: Request, res: Response) => {
   try {
-    const { error, value } = getStocksSchema.validate(req.query);
+    // Convert query parameters to appropriate types
+    const queryParams = {
+      search: req.query.search as string,
+      market: req.query.market as string,
+      limit: req.query.limit ? parseInt(req.query.limit as string) : undefined,
+      page: req.query.page ? parseInt(req.query.page as string) : undefined
+    };
+
+    const { error, value } = getStocksSchema.validate(queryParams);
     if (error) {
+      logger.error('Watchlist stocks validation error:', error.details[0].message);
       return res.status(400).json({
         success: false,
         message: error.details[0].message
       });
     }
 
-    const { search, market, limit = 50 } = value;
-    const stocks = await watchlistService.getAvailableStocks(search, market, limit);
+    const { search, market, limit = 20, page = 1 } = value;
+    const result = await watchlistService.getAvailableStocks(search, market, limit, page);
 
     return res.json({
       success: true,
-      data: stocks
+      data: result.stocks,
+      total: result.total,
+      page: page,
+      limit: limit
     });
   } catch (error) {
     logger.error('Error getting available stocks:', error);
@@ -214,6 +227,78 @@ router.get('/stats', authenticate, async (req: Request, res: Response) => {
     return res.status(500).json({
       success: false,
       message: 'Failed to get market statistics'
+    });
+  }
+});
+
+// Preset: Top 10 stocks by market cap
+router.get('/presets/top10', authenticate, async (req: Request, res: Response) => {
+  try {
+    const stocks = await watchlistService.getTop10Stocks();
+    
+    return res.json({
+      success: true,
+      data: stocks
+    });
+  } catch (error) {
+    logger.error('Error getting top 10 stocks:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to get top 10 stocks'
+    });
+  }
+});
+
+// Preset: Random 10 stocks
+router.get('/presets/random', authenticate, async (req: Request, res: Response) => {
+  try {
+    const stocks = await watchlistService.getRandomStocks(10);
+    
+    return res.json({
+      success: true,
+      data: stocks
+    });
+  } catch (error) {
+    logger.error('Error getting random stocks:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to get random stocks'
+    });
+  }
+});
+
+// Preset: KOSPI leaders
+router.get('/presets/kospi-leaders', authenticate, async (req: Request, res: Response) => {
+  try {
+    const stocks = await watchlistService.getKospiLeaders();
+    
+    return res.json({
+      success: true,
+      data: stocks
+    });
+  } catch (error) {
+    logger.error('Error getting KOSPI leaders:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to get KOSPI leaders'
+    });
+  }
+});
+
+// Preset: KOSDAQ promising stocks
+router.get('/presets/kosdaq-promising', authenticate, async (req: Request, res: Response) => {
+  try {
+    const stocks = await watchlistService.getKosdaqPromising();
+    
+    return res.json({
+      success: true,
+      data: stocks
+    });
+  } catch (error) {
+    logger.error('Error getting KOSDAQ promising stocks:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to get KOSDAQ promising stocks'
     });
   }
 });
