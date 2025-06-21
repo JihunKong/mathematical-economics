@@ -1,6 +1,8 @@
 import { prisma } from '../config/database';
 import { AppError } from '../middleware/errorHandler';
 import { TransactionType } from '@prisma/client';
+import { AggregatedStockService } from './aggregatedStockService';
+import { logger } from '../utils/logger';
 
 interface TradeData {
   userId: string;
@@ -11,6 +13,11 @@ interface TradeData {
 }
 
 export class TradingService {
+  private aggregatedStockService: AggregatedStockService;
+
+  constructor() {
+    this.aggregatedStockService = new AggregatedStockService();
+  }
   async executeBuy(data: TradeData) {
     const { userId, symbol, quantity, reason } = data;
 
@@ -38,15 +45,29 @@ export class TradingService {
       // Note: Stock permission and fresh price checks are handled by middleware (requireFreshPrice)
       // No need to duplicate the check here
 
-      // Check if stock has valid price
-      if (!stock.currentPrice || stock.currentPrice <= 0) {
+      // Get real-time price for accurate trading
+      let currentPrice = stock.currentPrice;
+      try {
+        const realTimeData = await this.aggregatedStockService.getStockPrice(symbol.toUpperCase());
+        if (realTimeData && realTimeData.currentPrice > 0) {
+          currentPrice = realTimeData.currentPrice;
+          logger.info(`Using real-time price for ${symbol}: ${currentPrice} (DB: ${stock.currentPrice})`);
+        } else {
+          logger.warn(`Failed to get real-time price for ${symbol}, using DB price: ${stock.currentPrice}`);
+        }
+      } catch (error) {
+        logger.warn(`Real-time price fetch failed for ${symbol}, using DB price:`, error);
+      }
+
+      // Check if we have valid price
+      if (!currentPrice || currentPrice <= 0) {
         throw new AppError('현재 가격 정보를 불러올 수 없습니다.\n\n' +
           '잠시 후 다시 시도해주세요.\n' +
           '주식 시장이 열려있는 시간인지 확인해주세요.', 400);
       }
 
-      // Calculate total cost
-      const totalCost = stock.currentPrice * quantity;
+      // Calculate total cost with real-time price
+      const totalCost = currentPrice * quantity;
       const commission = Math.round(totalCost * 0.00015); // 0.015% commission
       const totalAmount = totalCost + commission;
 
@@ -72,7 +93,7 @@ export class TradingService {
           stockId: stock.id,
           type: TransactionType.BUY,
           quantity,
-          price: stock.currentPrice,
+          price: currentPrice,
           totalAmount,
           commission,
           reason,
@@ -101,9 +122,9 @@ export class TradingService {
             quantity: newQuantity,
             averagePrice: newAveragePrice,
             totalCost: newTotalCost,
-            currentValue: newQuantity * stock.currentPrice,
-            profitLoss: (newQuantity * stock.currentPrice) - newTotalCost,
-            profitLossPercent: ((newQuantity * stock.currentPrice) - newTotalCost) / newTotalCost * 100,
+            currentValue: newQuantity * currentPrice,
+            profitLoss: (newQuantity * currentPrice) - newTotalCost,
+            profitLossPercent: ((newQuantity * currentPrice) - newTotalCost) / newTotalCost * 100,
           },
         });
       } else {
@@ -113,7 +134,7 @@ export class TradingService {
             userId,
             stockId: stock.id,
             quantity,
-            averagePrice: stock.currentPrice,
+            averagePrice: currentPrice,
             totalCost,
             currentValue: totalCost,
             profitLoss: 0,
@@ -158,8 +179,22 @@ export class TradingService {
       // Note: Stock permission and fresh price checks are handled by middleware (requireFreshPrice)
       // No need to duplicate the check here
 
-      // Check if stock has valid price
-      if (!stock.currentPrice || stock.currentPrice <= 0) {
+      // Get real-time price for accurate trading
+      let currentPrice = stock.currentPrice;
+      try {
+        const realTimeData = await this.aggregatedStockService.getStockPrice(symbol.toUpperCase());
+        if (realTimeData && realTimeData.currentPrice > 0) {
+          currentPrice = realTimeData.currentPrice;
+          logger.info(`Using real-time price for ${symbol}: ${currentPrice} (DB: ${stock.currentPrice})`);
+        } else {
+          logger.warn(`Failed to get real-time price for ${symbol}, using DB price: ${stock.currentPrice}`);
+        }
+      } catch (error) {
+        logger.warn(`Real-time price fetch failed for ${symbol}, using DB price:`, error);
+      }
+
+      // Check if we have valid price
+      if (!currentPrice || currentPrice <= 0) {
         throw new AppError('현재 가격 정보를 불러올 수 없습니다.\n\n' +
           '잠시 후 다시 시도해주세요.\n' +
           '주식 시장이 열려있는 시간인지 확인해주세요.', 400);
@@ -182,7 +217,7 @@ export class TradingService {
       }
 
       // Calculate proceeds
-      const totalProceeds = stock.currentPrice * quantity;
+      const totalProceeds = currentPrice * quantity;
       const commission = Math.round(totalProceeds * 0.00015); // 0.015% commission
       const netProceeds = totalProceeds - commission;
 
@@ -199,7 +234,7 @@ export class TradingService {
           stockId: stock.id,
           type: TransactionType.SELL,
           quantity,
-          price: stock.currentPrice,
+          price: currentPrice,
           totalAmount: totalProceeds,
           commission,
           reason,
@@ -223,9 +258,9 @@ export class TradingService {
           data: {
             quantity: remainingQuantity,
             totalCost: remainingTotalCost,
-            currentValue: remainingQuantity * stock.currentPrice,
-            profitLoss: (remainingQuantity * stock.currentPrice) - remainingTotalCost,
-            profitLossPercent: ((remainingQuantity * stock.currentPrice) - remainingTotalCost) / remainingTotalCost * 100,
+            currentValue: remainingQuantity * currentPrice,
+            profitLoss: (remainingQuantity * currentPrice) - remainingTotalCost,
+            profitLossPercent: ((remainingQuantity * currentPrice) - remainingTotalCost) / remainingTotalCost * 100,
           },
         });
       }
