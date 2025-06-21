@@ -13,11 +13,33 @@ router.use(authenticate);
 
 router.post(
   '/buy',
+  (req, res, next) => {
+    console.log('=== BUY ROUTE START ===');
+    console.log('User:', req.user?.id, req.user?.role);
+    console.log('Body:', req.body);
+    next();
+  },
   tradingRateLimiter,
+  (req, res, next) => {
+    console.log('=== AFTER RATE LIMITER ===');
+    next();
+  },
   requireWatchlist,
+  (req, res, next) => {
+    console.log('=== AFTER WATCHLIST CHECK ===');
+    next();
+  },
   requireFreshPrice,
+  (req, res, next) => {
+    console.log('=== AFTER FRESH PRICE CHECK ===');
+    next();
+  },
   tradingValidators.buy,
   validate,
+  (req, res, next) => {
+    console.log('=== BEFORE CONTROLLER ===');
+    next();
+  },
   tradingController.buyStock
 );
 
