@@ -147,13 +147,50 @@ export default function TradingPage() {
     const qty = parseInt(quantity);
     
     try {
-      console.log('=== TRYING API.JS METHOD FIRST ===');
+      console.log('=== USING DIRECT FETCH TO BYPASS INTERCEPTOR ===');
       
+      const token = localStorage.getItem('accessToken');
+      const endpoint = tradeMode === 'buy' ? '/api/trading/buy' : '/api/trading/sell';
+      
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          symbol: selectedStock.symbol,
+          quantity: qty,
+          reason: reason
+        })
+      });
+      
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
+      
+      const responseData = await response.json();
+      console.log('Response data:', responseData);
+      
+      if (!response.ok) {
+        if (responseData && responseData.message) {
+          console.log('Showing detailed error message:', responseData.message);
+          toast.error(responseData.message, {
+            duration: 8000,
+            style: {
+              maxWidth: '500px',
+              whiteSpace: 'pre-line'
+            }
+          });
+        } else {
+          toast.error(`거래 오류 (${response.status})`);
+        }
+        return;
+      }
+      
+      // 성공
       if (tradeMode === 'buy') {
-        await api.buyStock(selectedStock.symbol, qty, reason);
         toast.success('매수 주문이 완료되었습니다');
       } else {
-        await api.sellStock(selectedStock.symbol, qty, reason);
         toast.success('매도 주문이 완료되었습니다');
       }
       
