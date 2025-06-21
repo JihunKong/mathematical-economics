@@ -48,6 +48,16 @@ export class AuthService {
       classId = classRoom.id;
     }
 
+    // Set funds based on role - ADMIN/TEACHER get null, STUDENT gets default amount
+    const getFundsForRole = (userRole: UserRole) => {
+      if (userRole === UserRole.ADMIN || userRole === UserRole.TEACHER) {
+        return { currentCash: null, initialCapital: null };
+      }
+      return { currentCash: 10000000, initialCapital: 10000000 }; // 10 million won for students
+    };
+
+    const funds = getFundsForRole(role);
+
     // Create user
     const user = await prisma.user.create({
       data: {
@@ -56,6 +66,7 @@ export class AuthService {
         name,
         role,
         classId,
+        ...funds,
       },
       select: {
         id: true,
@@ -63,6 +74,8 @@ export class AuthService {
         name: true,
         role: true,
         classId: true,
+        currentCash: true,
+        initialCapital: true,
         createdAt: true,
       },
     });
