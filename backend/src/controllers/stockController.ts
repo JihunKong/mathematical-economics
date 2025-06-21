@@ -37,7 +37,7 @@ export const searchStocks = async (
     if (!q) {
       res.status(400).json({
         success: false,
-        message: 'Search query is required',
+        message: '🔍 검색어를 입력해주세요.',
       });
       return;
     }
@@ -128,7 +128,8 @@ export const getRealtimePrice = async (
     if (!priceData) {
       res.status(404).json({
         success: false,
-        message: 'Unable to fetch stock price data',
+        message: '📊 주식 가격 정보를 가져올 수 없습니다.\n\n' +
+          '🔄 잠시 후 다시 시도해주세요.',
       });
       return;
     }
@@ -153,7 +154,7 @@ export const getMultiplePrices = async (
     if (!symbols || !Array.isArray(symbols)) {
       res.status(400).json({
         success: false,
-        message: 'Symbols array is required',
+        message: '📋 종목 코드 목록이 필요합니다.',
       });
       return;
     }
@@ -182,7 +183,14 @@ export const getHistoricalData = async (
     if (!validPeriods.includes(period as string)) {
       res.status(400).json({
         success: false,
-        message: 'Invalid period. Valid periods are: 1D, 1W, 1M, 3M, 6M, 1Y',
+        message: '⏰ 잘못된 기간입니다.\n\n' +
+          '📌 사용 가능한 기간:\n' +
+          '• 1D (하루)\n' +
+          '• 1W (일주일)\n' +
+          '• 1M (한 달)\n' +
+          '• 3M (세 달)\n' +
+          '• 6M (여섯 달)\n' +
+          '• 1Y (일 년)',
       });
       return;
     }

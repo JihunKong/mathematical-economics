@@ -21,11 +21,13 @@ export const createClass = async (
     });
 
     if (!req.user) {
-      throw new AppError('User not authenticated', 401);
+      throw new AppError('🔐 로그인이 필요합니다.\n\n' +
+        '💡 로그인 후 다시 시도해주세요.', 401);
     }
 
     if (req.user.role !== 'TEACHER' && req.user.role !== 'ADMIN') {
-      throw new AppError('Only teachers and admins can create classes', 403);
+      throw new AppError('🏫 선생님만 학급을 만들 수 있습니다.\n\n' +
+        '💡 학생 계정으로는 이 기능을 사용할 수 없어요.', 403);
     }
 
     const teacherId = req.user.id;
@@ -60,7 +62,8 @@ export const getTeacherClasses = async (
 ) => {
   try {
     if (req.user?.role !== 'TEACHER' && req.user?.role !== 'ADMIN') {
-      throw new AppError('Only teachers and admins can access this resource', 403);
+      throw new AppError('🚫 선생님만 접근할 수 있는 메뉴입니다.\n\n' +
+        '💡 학생 계정으로는 이 정보를 볼 수 없어요.', 403);
     }
 
     const classes = await teacherService.getTeacherClasses(req.user.id);
@@ -82,7 +85,8 @@ export const getClassDetails = async (
 ) => {
   try {
     if (req.user?.role !== 'TEACHER' && req.user?.role !== 'ADMIN') {
-      throw new AppError('Only teachers and admins can access this resource', 403);
+      throw new AppError('🚫 선생님만 접근할 수 있는 메뉴입니다.\n\n' +
+        '💡 학생 계정으로는 이 정보를 볼 수 없어요.', 403);
     }
 
     const { classId } = req.params;
@@ -106,7 +110,8 @@ export const getStudentActivity = async (
 ) => {
   try {
     if (req.user?.role !== 'TEACHER' && req.user?.role !== 'ADMIN') {
-      throw new AppError('Only teachers and admins can view student activity', 403);
+      throw new AppError('📊 선생님만 학생 활동을 확인할 수 있습니다.\n\n' +
+        '💡 학생 계정으로는 다른 학생의 활동을 볼 수 없어요.', 403);
     }
 
     const { studentId } = req.params;
@@ -129,7 +134,8 @@ export const getClassStatistics = async (
 ) => {
   try {
     if (req.user?.role !== 'TEACHER' && req.user?.role !== 'ADMIN') {
-      throw new AppError('Only teachers and admins can view class statistics', 403);
+      throw new AppError('📊 선생님만 학급 통계를 확인할 수 있습니다.\n\n' +
+        '💡 학생 계정으로는 학급 전체 통계를 볼 수 없어요.', 403);
     }
 
     const { classId } = req.params;
@@ -152,14 +158,16 @@ export const updateStudentCash = async (
 ) => {
   try {
     if (req.user?.role !== 'TEACHER' && req.user?.role !== 'ADMIN') {
-      throw new AppError('Only teachers and admins can update student cash', 403);
+      throw new AppError('💰 선생님만 학생의 투자금을 수정할 수 있습니다.\n\n' +
+        '💡 학생 계정으로는 투자금을 변경할 수 없어요.', 403);
     }
 
     const { studentId } = req.params;
     const { newCash } = req.body;
 
     if (typeof newCash !== 'number' || newCash < 0) {
-      throw new AppError('Invalid cash amount', 400);
+      throw new AppError('❌ 잘못된 금액입니다.\n\n' +
+        '💡 0원 이상의 금액을 입력해주세요.', 400);
     }
 
     const updatedStudent = await teacherService.updateStudentCash(

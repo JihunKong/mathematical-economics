@@ -63,6 +63,11 @@ class ApiService {
         const errorData = error.response?.data as any;
         const message = errorData?.message || '알 수 없는 오류가 발생했습니다.';
         
+        console.log('API Interceptor - Error status:', error.response?.status);
+        console.log('API Interceptor - Error data:', errorData);
+        console.log('API Interceptor - Error code:', errorData?.code);
+        console.log('API Interceptor - Error message:', message);
+        
         // Show detailed error message for specific error codes
         if (errorData?.code === 'PRICE_NOT_FRESH') {
           // For price not fresh errors, show the full detailed message

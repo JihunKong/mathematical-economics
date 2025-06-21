@@ -119,13 +119,13 @@ export class WatchlistService {
     try {
       // Validate input
       if (stockIds.length === 0 || stockIds.length > 10) {
-        throw new Error('Watchlist must contain 1-10 stocks');
+        throw new Error('관심종목은 1개에서 10개까지 선택할 수 있습니다 📈');
       }
 
       // Check if user can change watchlist
       const canChange = await this.canChangeWatchlist(userId);
       if (!canChange) {
-        throw new Error('You can only change your watchlist once per day');
+        throw new Error('관심종목은 하루에 한 번만 변경할 수 있습니다 📅 내일 다시 시도해주세요!');
       }
 
       // Verify all stocks exist and are active
@@ -137,7 +137,7 @@ export class WatchlistService {
       });
 
       if (stocks.length !== stockIds.length) {
-        throw new Error('Some selected stocks are not available');
+        throw new Error('선택한 주식 중 일부를 사용할 수 없습니다 🚫 다른 종목을 선택해주세요.');
       }
 
       // Use transaction for atomic operations
@@ -190,19 +190,19 @@ export class WatchlistService {
       const currentWatchlist = await this.getUserWatchlist(userId);
       
       if (currentWatchlist.length >= 10) {
-        throw new Error('Watchlist is full (maximum 10 stocks)');
+        throw new Error('관심종목이 가득 찼습니다 (최대 10개) 📦 기존 종목을 제거하고 추가해주세요.');
       }
 
       // Check if stock already in watchlist
       const exists = currentWatchlist.some(item => item.stockId === stockId);
       if (exists) {
-        throw new Error('Stock already in watchlist');
+        throw new Error('이미 관심종목에 추가된 주식입니다 ✅');
       }
 
       // Check if user can change watchlist
       const canChange = await this.canChangeWatchlist(userId);
       if (!canChange) {
-        throw new Error('You can only change your watchlist once per day');
+        throw new Error('관심종목은 하루에 한 번만 변경할 수 있습니다 📅 내일 다시 시도해주세요!');
       }
 
       // Verify stock exists and is active
@@ -214,7 +214,7 @@ export class WatchlistService {
       });
 
       if (!stock) {
-        throw new Error('Stock not found or not available');
+        throw new Error('주식을 찾을 수 없거나 사용할 수 없습니다 🔍 다른 종목을 선택해주세요.');
       }
 
       // Add to watchlist
@@ -276,7 +276,7 @@ export class WatchlistService {
       // Check if user can change watchlist
       const canChange = await this.canChangeWatchlist(userId);
       if (!canChange) {
-        throw new Error('You can only change your watchlist once per day');
+        throw new Error('관심종목은 하루에 한 번만 변경할 수 있습니다 📅 내일 다시 시도해주세요!');
       }
 
       const result = await prisma.$transaction(async (tx) => {
@@ -289,7 +289,7 @@ export class WatchlistService {
         });
 
         if (removed.count === 0) {
-          throw new Error('Stock not found in watchlist');
+          throw new Error('관심종목에 없는 주식입니다 🔍');
         }
 
         // Reorder remaining items

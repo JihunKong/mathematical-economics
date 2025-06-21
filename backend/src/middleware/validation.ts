@@ -11,7 +11,8 @@ export const validate = (req: Request, _res: Response, next: NextFunction) => {
       message: error.msg,
     }));
     
-    return next(new AppError('Validation failed', 400, {
+    return next(new AppError('⚠️ 입력값을 확인해주세요.\n\n' +
+      '💡 올바른 형식으로 다시 입력해주세요.', 400, {
       errors: errorMessages,
     } as any));
   }

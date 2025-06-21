@@ -136,13 +136,15 @@ export const addStock = catchAsync(async (req: AuthenticatedRequest, res: Respon
   
   // Check if user is teacher or admin
   if (req.user.role !== 'TEACHER' && req.user.role !== 'ADMIN') {
-    return next(new AppError('Only teachers and admins can add stocks', 403));
+    return next(new AppError('🏫 선생님만 종목을 추가할 수 있습니다.\n\n' +
+      '💡 학생 계정으로는 이 기능을 사용할 수 없어요.', 403));
   }
   
   // Find stock info
   const stockInfo = KOREAN_STOCKS.find(s => s.symbol === symbol);
   if (!stockInfo) {
-    return next(new AppError('Stock not found', 404));
+    return next(new AppError('📈 종목을 찾을 수 없습니다.\n\n' +
+      '🔍 종목 코드를 다시 확인해주세요.', 404));
   }
   
   // Check if already exists
@@ -151,7 +153,8 @@ export const addStock = catchAsync(async (req: AuthenticatedRequest, res: Respon
   });
   
   if (existing) {
-    return next(new AppError('Stock already exists', 400));
+    return next(new AppError('🚫 이미 등록된 종목입니다.\n\n' +
+      '💡 다른 종목 코드를 사용해주세요.', 400));
   }
   
   // Get initial price from service
@@ -159,7 +162,8 @@ export const addStock = catchAsync(async (req: AuthenticatedRequest, res: Respon
   const priceData = await aggregatedService.getStockPrice(symbol);
   
   if (!priceData) {
-    return next(new AppError('Failed to get stock price', 500));
+    return next(new AppError('💹 주식 가격 정보를 가져올 수 없습니다.\n\n' +
+      '⏱️ 잠시 후 다시 시도해주세요.', 500));
   }
   
   // Create stock
@@ -195,7 +199,8 @@ export const toggleStockTracking = catchAsync(async (req: AuthenticatedRequest, 
   
   // Check if user is teacher or admin
   if (req.user.role !== 'TEACHER' && req.user.role !== 'ADMIN') {
-    return next(new AppError('Only teachers and admins can manage stock tracking', 403));
+    return next(new AppError('🏫 선생님만 종목 추적을 관리할 수 있습니다.\n\n' +
+      '💡 학생 계정으로는 이 기능을 사용할 수 없어요.', 403));
   }
   
   const stock = await prisma.stock.findUnique({
@@ -203,7 +208,8 @@ export const toggleStockTracking = catchAsync(async (req: AuthenticatedRequest, 
   });
   
   if (!stock) {
-    return next(new AppError('Stock not found', 404));
+    return next(new AppError('📈 종목을 찾을 수 없습니다.\n\n' +
+      '🔍 종목 코드를 다시 확인해주세요.', 404));
   }
   
   // Update tracking status
@@ -249,7 +255,8 @@ export const getTrackedStocks = catchAsync(async (_req: AuthenticatedRequest, re
 export const triggerPriceCollection = catchAsync(async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   // Check if user is teacher or admin
   if (req.user.role !== 'TEACHER' && req.user.role !== 'ADMIN') {
-    return next(new AppError('Only teachers and admins can trigger price collection', 403));
+    return next(new AppError('🏫 선생님만 가격 업데이트를 실행할 수 있습니다.\n\n' +
+      '💡 학생 계정으로는 이 기능을 사용할 수 없어요.', 403));
   }
   
   const collector = getStockPriceCollector();
@@ -275,7 +282,8 @@ export const getStockPriceHistory = catchAsync(async (req: AuthenticatedRequest,
   });
   
   if (!stock) {
-    return next(new AppError('Stock not found', 404));
+    return next(new AppError('📈 종목을 찾을 수 없습니다.\n\n' +
+      '🔍 종목 코드를 다시 확인해주세요.', 404));
   }
   
   const since = new Date();
@@ -317,7 +325,8 @@ export const updateStockPrice = catchAsync(async (req: AuthenticatedRequest, res
   
   // Check if user is teacher or admin
   if (req.user.role !== 'TEACHER' && req.user.role !== 'ADMIN') {
-    return next(new AppError('Only teachers and admins can update stock prices', 403));
+    return next(new AppError('🏫 선생님만 주식 가격을 업데이트할 수 있습니다.\n\n' +
+      '💡 학생 계정으로는 이 기능을 사용할 수 없어요.', 403));
   }
   
   const stock = await prisma.stock.findUnique({
@@ -325,7 +334,8 @@ export const updateStockPrice = catchAsync(async (req: AuthenticatedRequest, res
   });
   
   if (!stock) {
-    return next(new AppError('Stock not found', 404));
+    return next(new AppError('📈 종목을 찾을 수 없습니다.\n\n' +
+      '🔍 종목 코드를 다시 확인해주세요.', 404));
   }
   
   // Update stock price using database service
@@ -340,7 +350,8 @@ export const updateStockPrice = catchAsync(async (req: AuthenticatedRequest, res
   });
   
   if (!success) {
-    return next(new AppError('Failed to update stock price', 500));
+    return next(new AppError('💹 주식 가격 업데이트에 실패했습니다.\n\n' +
+      '⏱️ 잠시 후 다시 시도해주세요.', 500));
   }
   
   logger.info(`Stock ${symbol} price manually updated by ${req.user.email}`);
@@ -355,7 +366,8 @@ export const updateStockPrice = catchAsync(async (req: AuthenticatedRequest, res
 export const crawlStockPrices = catchAsync(async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   // Check if user is teacher or admin
   if (req.user.role !== 'TEACHER' && req.user.role !== 'ADMIN') {
-    return next(new AppError('Only teachers and admins can trigger stock crawling', 403));
+    return next(new AppError('🏫 선생님만 주식 데이터 수집을 실행할 수 있습니다.\n\n' +
+      '💡 학생 계정으로는 이 기능을 사용할 수 없어요.', 403));
   }
   
   const crawlerService = new CrawlerStockService();

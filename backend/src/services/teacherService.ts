@@ -73,7 +73,8 @@ export class TeacherService {
     });
 
     if (!classData) {
-      throw new AppError('Class not found', 404);
+      throw new AppError('🏫 학급을 찾을 수 없습니다.\n\n' +
+        '🔍 학급 코드를 다시 확인해주세요.', 404);
     }
 
     // Get portfolio values for each student
@@ -121,11 +122,13 @@ export class TeacherService {
     });
 
     if (!student || !student.classId) {
-      throw new AppError('Student not found or not in a class', 404);
+      throw new AppError('👨‍🎓 학생을 찾을 수 없거나 학급에 속해있지 않습니다.\n\n' +
+        '🔍 학생 정보를 다시 확인해주세요.', 404);
     }
 
     if (student.class?.teacherId !== teacherId) {
-      throw new AppError('Not authorized to update this student', 403);
+      throw new AppError('🚫 이 학생의 정보를 수정할 권한이 없습니다.\n\n' +
+        '💡 본인 학급의 학생만 관리할 수 있어요.', 403);
     }
 
     // Update student's cash
@@ -171,7 +174,8 @@ export class TeacherService {
     });
 
     if (!student) {
-      throw new AppError('Student not found', 404);
+      throw new AppError('👨‍🎓 학생을 찾을 수 없습니다.\n\n' +
+        '🔍 학생 ID를 다시 확인해주세요.', 404);
     }
 
     // Get recent transactions with reasoning
@@ -235,7 +239,8 @@ export class TeacherService {
     });
 
     if (!classData) {
-      throw new AppError('Class not found', 404);
+      throw new AppError('🏫 학급을 찾을 수 없습니다.\n\n' +
+        '🔍 학급 코드를 다시 확인해주세요.', 404);
     }
 
     const studentIds = classData.students.map(s => s.id);

@@ -15,7 +15,9 @@ export const getStockChartData = catchAsync(async (req: AuthenticatedRequest, re
   });
 
   if (!stock) {
-    return next(new AppError('Stock not found', 404));
+    return next(new AppError('📊 종목을 찾을 수 없습니다.\n\n' +
+      '🔍 종목 코드를 다시 확인해주세요.\n' +
+      '💡 정확한 종목 코드를 입력했는지 확인해보세요.', 404));
   }
 
   // Calculate date range based on period
@@ -113,7 +115,9 @@ export const getAggregatedChartData = catchAsync(async (req: AuthenticatedReques
   });
 
   if (!stock) {
-    return next(new AppError('Stock not found', 404));
+    return next(new AppError('📊 종목을 찾을 수 없습니다.\n\n' +
+      '🔍 종목 코드를 다시 확인해주세요.\n' +
+      '💡 정확한 종목 코드를 입력했는지 확인해보세요.', 404));
   }
 
   // Calculate date range

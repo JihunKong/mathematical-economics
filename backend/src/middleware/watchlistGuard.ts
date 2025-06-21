@@ -130,17 +130,21 @@ export const requireFreshPrice = async (req: Request, res: Response, next: NextF
       });
 
       if (!allowedStock) {
+        const detailedMessage = `${stock.name}(${stock.symbol}) 종목은 거래가 허용되지 않았습니다.\n\n` +
+          `거래 제한 사유:\n` +
+          `• 선생님이 해당 종목을 교육용으로 허용하지 않았습니다\n` +
+          `• 안전한 학습을 위해 선별된 종목만 거래 가능합니다\n\n` +
+          `해결 방법:\n` +
+          `1. 허용된 종목 목록에서 다른 종목을 선택해주세요\n` +
+          `2. 선생님께 해당 종목의 거래 허용을 요청해주세요\n` +
+          `3. 관심종목 설정에서 허용된 종목만 선택하세요\n\n` +
+          `참고: 교육 목적상 선생님이 승인한 종목만 거래할 수 있습니다`;
+        
+        logger.info(`Stock not allowed - User: ${user.id}, Stock: ${stock.symbol}, Message: ${detailedMessage}`);
+        
         return res.status(403).json({
           success: false,
-          message: `${stock.name}(${stock.symbol}) 종목은 거래가 허용되지 않았습니다.\n\n` +
-            `거래 제한 사유:\n` +
-            `• 선생님이 해당 종목을 교육용으로 허용하지 않았습니다\n` +
-            `• 안전한 학습을 위해 선별된 종목만 거래 가능합니다\n\n` +
-            `해결 방법:\n` +
-            `1. 허용된 종목 목록에서 다른 종목을 선택해주세요\n` +
-            `2. 선생님께 해당 종목의 거래 허용을 요청해주세요\n` +
-            `3. 관심종목 설정에서 허용된 종목만 선택하세요\n\n` +
-            `참고: 교육 목적상 선생님이 승인한 종목만 거래할 수 있습니다`,
+          message: detailedMessage,
           code: 'STOCK_NOT_ALLOWED'
         });
       }

@@ -54,7 +54,8 @@ export const refreshToken = async (
     if (!refreshToken) {
       res.status(400).json({
         success: false,
-        message: 'Refresh token is required',
+        message: '🔄 새로고침 토큰이 필요합니다.\n\n' +
+          '💡 다시 로그인해주세요.',
       });
       return;
     }
@@ -79,7 +80,7 @@ export const logout = async (
     // In a production app, you might want to blacklist the token here
     res.status(200).json({
       success: true,
-      message: 'Logged out successfully',
+      message: '👋 로그아웃되었습니다. 안녕히 가세요!',
     });
   } catch (error) {
     next(error);

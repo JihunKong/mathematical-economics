@@ -24,7 +24,7 @@ export const buyStock = async (
 
     res.status(200).json({
       success: true,
-      message: 'Buy order executed successfully',
+      message: '🎉 매수 주문이 성공적으로 체결되었습니다!',
       data: result,
     });
   } catch (error) {
@@ -51,7 +51,7 @@ export const sellStock = async (
 
     res.status(200).json({
       success: true,
-      message: 'Sell order executed successfully',
+      message: '💰 매도 주문이 성공적으로 체결되었습니다!',
       data: result,
     });
   } catch (error) {

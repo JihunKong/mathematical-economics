@@ -40,7 +40,8 @@ export const approveUser = async (req: Request, res: Response, next: NextFunctio
 
     // Validate role
     if (!role || !['STUDENT', 'TEACHER'].includes(role)) {
-      throw new AppError('Invalid role. Must be STUDENT or TEACHER', 400);
+      throw new AppError('❌ 잘못된 역할입니다.\n\n' +
+        '💡 STUDENT(학생) 또는 TEACHER(선생님)만 선택할 수 있어요.', 400);
     }
 
     // Update user role and activate
@@ -138,7 +139,8 @@ export const resetUserPassword = async (req: Request, res: Response, next: NextF
     const { newPassword } = req.body;
 
     if (!newPassword || newPassword.length < 6) {
-      throw new AppError('Password must be at least 6 characters long', 400);
+      throw new AppError('🔐 비밀번호는 최소 6자 이상이어야 합니다.\n\n' +
+        '💡 보안을 위해 긴 비밀번호를 사용해주세요.', 400);
     }
 
     const hashedPassword = await hashPassword(newPassword);
@@ -168,7 +170,8 @@ export const toggleUserStatus = async (req: Request, res: Response, next: NextFu
     });
 
     if (!user) {
-      throw new AppError('User not found', 404);
+      throw new AppError('👤 사용자를 찾을 수 없습니다.\n\n' +
+        '🔍 사용자 ID를 다시 확인해주세요.', 404);
     }
 
     const updatedUser = await prisma.user.update({
@@ -200,15 +203,18 @@ export const createTeacherAccount = async (req: Request, res: Response, next: Ne
 
     // Validate inputs
     if (!email || !name || !password) {
-      throw new AppError('Email, name, and password are required', 400);
+      throw new AppError('📄 필수 정보가 비어있습니다.\n\n' +
+        '✅ 이메일, 이름, 비밀번호를 모두 입력해주세요.', 400);
     }
 
     if (password.length < 6) {
-      throw new AppError('Password must be at least 6 characters long', 400);
+      throw new AppError('🔐 비밀번호는 최소 6자 이상이어야 합니다.\n\n' +
+        '💡 보안을 위해 긴 비밀번호를 사용해주세요.', 400);
     }
 
     if (!/\d/.test(password)) {
-      throw new AppError('Password must contain at least one number', 400);
+      throw new AppError('🔢 비밀번호에는 숫자가 하나 이상 포함되어야 합니다.\n\n' +
+        '💡 보안을 위해 숫자를 포함한 비밀번호를 사용해주세요.', 400);
     }
 
     // Check if email already exists
@@ -217,7 +223,8 @@ export const createTeacherAccount = async (req: Request, res: Response, next: Ne
     });
 
     if (existingUser) {
-      throw new AppError('User with this email already exists', 400);
+      throw new AppError('🚫 이미 사용 중인 이메일입니다.\n\n' +
+        '💡 다른 이메일을 사용해주세요.', 400);
     }
 
     // Hash password

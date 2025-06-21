@@ -161,10 +161,17 @@ export default function TradingPage() {
       fetchData();
     } catch (error: any) {
       console.error('Trade failed:', error);
+      console.log('Error response status:', error?.response?.status);
+      console.log('Error response data:', error?.response?.data);
+      console.log('Full error object:', error);
       
       // 403 오류인 경우 상세한 안내 메시지 표시
       if (error?.response?.status === 403) {
         const errorMessage = error?.response?.data?.message;
+        const errorCode = error?.response?.data?.code;
+        console.log('403 Error - Message:', errorMessage);
+        console.log('403 Error - Code:', errorCode);
+        
         if (errorMessage) {
           // 백엔드에서 온 상세 메시지를 그대로 표시
           toast.error(errorMessage, {

@@ -106,7 +106,9 @@ export class StockService {
     });
 
     if (!stock) {
-      throw new AppError('Stock not found', 404);
+      throw new AppError('📊 종목을 찾을 수 없습니다.\n\n' +
+        '🔍 종목 코드를 다시 확인해주세요.\n' +
+        '💡 정확한 종목 코드를 입력했는지 확인해보세요.', 404);
     }
 
     return this.formatStockData(stock);
@@ -118,7 +120,9 @@ export class StockService {
     });
 
     if (!stock) {
-      throw new AppError('Stock not found', 404);
+      throw new AppError('📊 종목을 찾을 수 없습니다.\n\n' +
+        '🔍 종목 코드를 다시 확인해주세요.\n' +
+        '💡 정확한 종목 코드를 입력했는지 확인해보세요.', 404);
     }
 
     // stockDataService를 사용하여 과거 데이터 가져오기

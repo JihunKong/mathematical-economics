@@ -13,7 +13,8 @@ export class PortfolioService {
     });
 
     if (!user) {
-      throw new AppError('User not found', 404);
+      throw new AppError('👤 사용자를 찾을 수 없습니다.\n\n' +
+        '🔄 다시 로그인해주세요.', 404);
     }
 
     // Get portfolio summary - find by userId
