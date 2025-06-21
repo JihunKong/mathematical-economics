@@ -35,30 +35,8 @@ export class TradingService {
           '종목 코드를 다시 확인해주세요.', 404);
       }
 
-      // Check if student is allowed to trade this stock
-      if (user.role === 'STUDENT' && user.classId) {
-        const allowedStock = await tx.allowedStock.findFirst({
-          where: {
-            classId: user.classId,
-            stockId: stock.id,
-            isActive: true
-          }
-        });
-
-        if (!allowedStock) {
-          const error = new AppError(`${stock.name}(${stock.symbol}) 종목은 거래가 허용되지 않았습니다.\n\n` +
-            `거래 제한 사유:\n` +
-            `• 관심종목으로 선택하지 않은 종목입니다\n` +
-            `• 선택한 10개 관심종목만 거래할 수 있습니다\n\n` +
-            `해결 방법:\n` +
-            `1. 관심종목 설정에서 이 종목을 추가해주세요\n` +
-            `2. 기존 관심종목 중 하나를 제거하고 이 종목을 선택하세요\n` +
-            `3. 현재 선택된 관심종목으로만 거래해주세요\n\n` +
-            `참고: 하루에 한 번만 관심종목을 변경할 수 있습니다`, 403);
-          (error as any).code = 'STOCK_NOT_ALLOWED';
-          throw error;
-        }
-      }
+      // Note: Stock permission and fresh price checks are handled by middleware (requireFreshPrice)
+      // No need to duplicate the check here
 
       // Check if stock has valid price
       if (!stock.currentPrice || stock.currentPrice <= 0) {
@@ -177,30 +155,8 @@ export class TradingService {
           '종목 코드를 다시 확인해주세요.', 404);
       }
 
-      // Check if student is allowed to trade this stock
-      if (user.role === 'STUDENT' && user.classId) {
-        const allowedStock = await tx.allowedStock.findFirst({
-          where: {
-            classId: user.classId,
-            stockId: stock.id,
-            isActive: true
-          }
-        });
-
-        if (!allowedStock) {
-          const error = new AppError(`${stock.name}(${stock.symbol}) 종목은 거래가 허용되지 않았습니다.\n\n` +
-            `거래 제한 사유:\n` +
-            `• 관심종목으로 선택하지 않은 종목입니다\n` +
-            `• 선택한 10개 관심종목만 거래할 수 있습니다\n\n` +
-            `해결 방법:\n` +
-            `1. 관심종목 설정에서 이 종목을 추가해주세요\n` +
-            `2. 기존 관심종목 중 하나를 제거하고 이 종목을 선택하세요\n` +
-            `3. 현재 선택된 관심종목으로만 거래해주세요\n\n` +
-            `참고: 하루에 한 번만 관심종목을 변경할 수 있습니다`, 403);
-          (error as any).code = 'STOCK_NOT_ALLOWED';
-          throw error;
-        }
-      }
+      // Note: Stock permission and fresh price checks are handled by middleware (requireFreshPrice)
+      // No need to duplicate the check here
 
       // Check if stock has valid price
       if (!stock.currentPrice || stock.currentPrice <= 0) {
