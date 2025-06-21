@@ -146,37 +146,62 @@ export default function TradingPage() {
 
     const qty = parseInt(quantity);
     
+    console.log('Trade mode:', tradeMode);
+    console.log('Selected stock:', selectedStock);
+    console.log('Quantity:', qty);
+    console.log('Reason:', reason);
+    
     try {
-      if (tradeMode === 'buy') {
-        // 직접 fetch로 테스트해보기
-        const token = localStorage.getItem('accessToken');
-        const directResponse = await fetch('/api/trading/buy', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            symbol: selectedStock.symbol,
-            quantity: qty,
-            reason: reason
-          })
-        });
-        
-        console.log('Direct fetch response status:', directResponse.status);
-        console.log('Direct fetch response ok:', directResponse.ok);
-        
-        const directResponseData = await directResponse.json();
-        console.log('Direct fetch response data:', directResponseData);
-        
-        if (!directResponse.ok) {
+      // 직접 fetch로 테스트 (매수/매도 모두)
+      const token = localStorage.getItem('accessToken');
+      const endpoint = tradeMode === 'buy' ? '/api/trading/buy' : '/api/trading/sell';
+      
+      console.log('Making direct fetch to:', endpoint);
+      
+      const directResponse = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          symbol: selectedStock.symbol,
+          quantity: qty,
+          reason: reason
+        })
+      });
+      
+      console.log('=== DIRECT FETCH RESULTS ===');
+      console.log('Response status:', directResponse.status);
+      console.log('Response ok:', directResponse.ok);
+      console.log('Response headers:', Object.fromEntries(directResponse.headers.entries()));
+      
+      const directResponseData = await directResponse.json();
+      console.log('Response data:', directResponseData);
+      console.log('Response data type:', typeof directResponseData);
+      console.log('Response data keys:', Object.keys(directResponseData || {}));
+      
+      if (!directResponse.ok) {
+        // 직접 에러 처리
+        if (directResponseData && directResponseData.message) {
+          console.log('Showing error message from direct fetch:', directResponseData.message);
+          toast.error(directResponseData.message, {
+            duration: 8000,
+            style: {
+              maxWidth: '500px',
+              whiteSpace: 'pre-line'
+            }
+          });
+          return; // 에러 처리 완료
+        } else {
           throw new Error(`HTTP ${directResponse.status}: ${JSON.stringify(directResponseData)}`);
         }
-        
-        // await api.buyStock(selectedStock.symbol, qty, reason);
+      }
+      
+      // 성공 메시지
+      if (tradeMode === 'buy') {
         toast.success('매수 주문이 완료되었습니다');
       } else {
-        await api.sellStock(selectedStock.symbol, qty, reason);
         toast.success('매도 주문이 완료되었습니다');
       }
       
