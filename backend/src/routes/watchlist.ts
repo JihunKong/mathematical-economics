@@ -57,7 +57,7 @@ router.get('/stocks', authenticate, async (req: Request, res: Response) => {
     logger.error('Error getting available stocks:', error);
     return res.status(500).json({
       success: false,
-      message: 'Failed to get available stocks'
+      message: '주식 목록을 불러오는데 실패했습니다.'
     });
   }
 });
@@ -76,7 +76,7 @@ router.get('/', authenticate, async (req: Request, res: Response) => {
     logger.error('Error getting user watchlist:', error);
     return res.status(500).json({
       success: false,
-      message: 'Failed to get watchlist'
+      message: '관심종목을 불러오는데 실패했습니다.'
     });
   }
 });
@@ -95,7 +95,7 @@ router.get('/can-change', authenticate, async (req: Request, res: Response) => {
     logger.error('Error checking watchlist change permission:', error);
     return res.status(500).json({
       success: false,
-      message: 'Failed to check permissions'
+      message: '권한 확인에 실패했습니다.'
     });
   }
 });
@@ -118,7 +118,7 @@ router.post('/', authenticate, async (req: Request, res: Response) => {
 
     return res.json({
       success: true,
-      message: `Watchlist updated with ${result} stocks`,
+      message: `${result}개의 종목으로 관심종목이 업데이트되었습니다.`,
       data: { count: result }
     });
   } catch (error) {
@@ -133,7 +133,7 @@ router.post('/', authenticate, async (req: Request, res: Response) => {
 
     return res.status(500).json({
       success: false,
-      message: 'Failed to update watchlist'
+      message: '관심종목 업데이트에 실패했습니다.'
     });
   }
 });
@@ -156,7 +156,7 @@ router.post('/add', authenticate, async (req: Request, res: Response) => {
 
     return res.json({
       success: true,
-      message: 'Stock added to watchlist',
+      message: '종목이 관심종목에 추가되었습니다.',
       data: result
     });
   } catch (error) {
@@ -171,7 +171,7 @@ router.post('/add', authenticate, async (req: Request, res: Response) => {
 
     return res.status(500).json({
       success: false,
-      message: 'Failed to add stock to watchlist'
+      message: '관심종목 추가에 실패했습니다.'
     });
   }
 });
@@ -185,7 +185,7 @@ router.delete('/:stockId', authenticate, async (req: Request, res: Response) => 
     if (!stockId) {
       return res.status(400).json({
         success: false,
-        message: 'Stock ID is required'
+        message: '종목 ID가 필요합니다.'
       });
     }
 
@@ -193,7 +193,7 @@ router.delete('/:stockId', authenticate, async (req: Request, res: Response) => 
 
     return res.json({
       success: true,
-      message: 'Stock removed from watchlist',
+      message: '종목이 관심종목에서 삭제되었습니다.',
       data: { removed: result }
     });
   } catch (error) {
@@ -208,7 +208,7 @@ router.delete('/:stockId', authenticate, async (req: Request, res: Response) => 
 
     return res.status(500).json({
       success: false,
-      message: 'Failed to remove stock from watchlist'
+      message: '관심종목 삭제에 실패했습니다.'
     });
   }
 });
@@ -226,7 +226,7 @@ router.get('/stats', authenticate, async (req: Request, res: Response) => {
     logger.error('Error getting market stats:', error);
     return res.status(500).json({
       success: false,
-      message: 'Failed to get market statistics'
+      message: '시장 통계를 불러오는데 실패했습니다.'
     });
   }
 });
@@ -244,7 +244,7 @@ router.get('/presets/top10', authenticate, async (req: Request, res: Response) =
     logger.error('Error getting top 10 stocks:', error);
     return res.status(500).json({
       success: false,
-      message: 'Failed to get top 10 stocks'
+      message: '상위 10개 종목을 불러오는데 실패했습니다.'
     });
   }
 });
@@ -262,7 +262,7 @@ router.get('/presets/random', authenticate, async (req: Request, res: Response) 
     logger.error('Error getting random stocks:', error);
     return res.status(500).json({
       success: false,
-      message: 'Failed to get random stocks'
+      message: '추천 종목을 불러오는데 실패했습니다.'
     });
   }
 });
@@ -280,7 +280,7 @@ router.get('/presets/kospi-leaders', authenticate, async (req: Request, res: Res
     logger.error('Error getting KOSPI leaders:', error);
     return res.status(500).json({
       success: false,
-      message: 'Failed to get KOSPI leaders'
+      message: 'KOSPI 주도주를 불러오는데 실패했습니다.'
     });
   }
 });
@@ -298,7 +298,7 @@ router.get('/presets/kosdaq-promising', authenticate, async (req: Request, res: 
     logger.error('Error getting KOSDAQ promising stocks:', error);
     return res.status(500).json({
       success: false,
-      message: 'Failed to get KOSDAQ promising stocks'
+      message: 'KOSDAQ 유망주를 불러오는데 실패했습니다.'
     });
   }
 });

@@ -158,7 +158,7 @@ export async function securityMiddleware(
       
       res.status(403).json({ 
         success: false, 
-        message: 'Forbidden' 
+        message: '\uad8c\ud55c\uc774 \uc5c6\uc2b5\ub2c8\ub2e4.' 
       });
       return;
     }

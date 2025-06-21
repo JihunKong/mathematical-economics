@@ -113,6 +113,11 @@ export default function TradingPage() {
       // Check if it's a watchlist requirement error (403)
       if (error?.response?.status === 403 && error?.response?.data?.code === 'WATCHLIST_REQUIRED') {
         setNeedsWatchlist(true);
+      } else if (error?.response?.data?.message?.includes('24시간')) {
+        toast.error(error.response.data.message);
+        toast.info('💡 관심종목 선정 후 24시간이 지나야 거래가 가능합니다. 이 시간 동안 종목에 대해 충분히 조사해보세요!', {
+          duration: 6000
+        });
       } else {
         toast.error('데이터를 불러오는데 실패했습니다');
       }
@@ -154,8 +159,43 @@ export default function TradingPage() {
       setQuantity('');
       setReason('');
       fetchData();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Trade failed:', error);
+      
+      // 403 오류인 경우 상세한 안내 메시지 표시
+      if (error?.response?.status === 403) {
+        const errorMessage = error?.response?.data?.message;
+        if (errorMessage) {
+          // 백엔드에서 온 상세 메시지를 그대로 표시
+          toast.error(errorMessage, {
+            duration: 8000,
+            style: {
+              maxWidth: '500px',
+              whiteSpace: 'pre-line'
+            }
+          });
+        } else {
+          toast.error('거래 권한이 없습니다. 관심종목을 먼저 설정해주세요.');
+        }
+      } else if (error?.response?.status === 423) {
+        // 가격 정보가 오래된 경우
+        const errorMessage = error?.response?.data?.message;
+        if (errorMessage) {
+          toast.error(errorMessage, {
+            duration: 8000,
+            style: {
+              maxWidth: '500px',
+              whiteSpace: 'pre-line'
+            }
+          });
+        } else {
+          toast.error('가격 정보가 오래되어 거래할 수 없습니다.');
+        }
+      } else {
+        // 기타 오류
+        const errorMessage = error?.response?.data?.message || '거래 처리 중 오류가 발생했습니다.';
+        toast.error(errorMessage);
+      }
     }
   };
 
@@ -198,10 +238,41 @@ export default function TradingPage() {
     }
   }, [needsWatchlist, user, navigate]);
 
-  if (loading) return <LoadingSpinner />;
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 space-y-4">
+        <LoadingSpinner size="lg" />
+        <div className="text-center">
+          <p className="text-gray-600">주식 데이터를 불러오는 중입니다...</p>
+          <p className="text-sm text-gray-500 mt-2">
+            {user?.role === 'STUDENT' && '관심종목 선정 후 처음 접속하시면 데이터 준비에 시간이 걸릴 수 있습니다.'}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
+      {/* 거래 주의사항 안내 */}
+      {user?.role === 'STUDENT' && (
+        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="flex items-start gap-3">
+            <Info className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+            <div>
+              <h3 className="font-semibold text-blue-900 mb-2">거래 안내사항</h3>
+              <ul className="text-sm text-blue-800 space-y-1">
+                <li>• <strong>관심종목 설정 필수:</strong> 선택한 종목만 거래할 수 있습니다 (하루 1회 변경 가능)</li>
+                <li>• <strong>최신 가격 정보:</strong> 24시간 이내 업데이트된 가격 정보만 거래 가능합니다</li>
+                <li>• <strong>투자 근거 작성:</strong> 모든 거래 시 투자 판단 근거를 작성해야 합니다</li>
+                <li>• <strong>거래 제한:</strong> 보유 현금 범위 내에서만 매수, 보유 수량 범위 내에서만 매도 가능</li>
+                <li>• <strong>문의사항:</strong> 오류 발생 시 선생님께 문의해주세요</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="mb-6">
         <div className="flex justify-between items-center mb-2">
           <h1 className="text-2xl font-bold">주식 거래</h1>

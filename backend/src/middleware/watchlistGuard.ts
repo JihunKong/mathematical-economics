@@ -25,14 +25,22 @@ export const requireWatchlist = async (req: Request, res: Response, next: NextFu
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: 'User not found'
+        message: '사용자를 찾을 수 없습니다.'
       });
     }
 
     if (!user.hasSelectedWatchlist) {
       return res.status(403).json({
         success: false,
-        message: 'You must select your watchlist before accessing this feature',
+        message: '거래를 시작하기 전에 관심종목을 선택해주세요!\n\n' +
+                 '안내사항:\n' +
+                 '• 최대 10개의 종목을 선택할 수 있습니다\n' +
+                 '• 하루에 한 번만 변경할 수 있습니다\n' +
+                 '• 선택한 종목만 거래할 수 있습니다\n\n' +
+                 '관심종목 설정 방법:\n' +
+                 '1. 메뉴에서 "관심종목 설정"을 클릭하세요\n' +
+                 '2. 원하는 종목을 최대 10개까지 선택하세요\n' +
+                 '3. 저장 후 거래를 시작할 수 있습니다',
         code: 'WATCHLIST_REQUIRED'
       });
     }
@@ -42,7 +50,7 @@ export const requireWatchlist = async (req: Request, res: Response, next: NextFu
     logger.error('Error in watchlist guard middleware:', error);
     return res.status(500).json({
       success: false,
-      message: 'Internal server error'
+      message: '서버 오류가 발생했습니다.'
     });
   }
 };
@@ -58,7 +66,7 @@ export const requireFreshPrice = async (req: Request, res: Response, next: NextF
     if (!stockIdentifier) {
       return res.status(400).json({
         success: false,
-        message: 'Stock symbol or ID is required'
+        message: '종목 코드 또는 ID가 필요합니다.'
       });
     }
 
@@ -75,7 +83,7 @@ export const requireFreshPrice = async (req: Request, res: Response, next: NextF
     if (!stock) {
       return res.status(404).json({
         success: false,
-        message: 'Stock not found'
+        message: '종목을 찾을 수 없습니다.'
       });
     }
 
@@ -84,15 +92,28 @@ export const requireFreshPrice = async (req: Request, res: Response, next: NextF
     const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
     if (!stock.lastPriceUpdate || stock.lastPriceUpdate < dayAgo) {
+      const hoursAgo = stock.lastPriceUpdate 
+        ? Math.floor((now.getTime() - stock.lastPriceUpdate.getTime()) / (1000 * 60 * 60))
+        : null;
+      
       return res.status(423).json({
         success: false,
-        message: `Stock price for ${stock.name} (${stock.symbol}) is not fresh. Please wait for price update.`,
+        message: `${stock.name}(${stock.symbol})의 가격 정보가 오래되어 거래할 수 없습니다.\n\n` +
+                 `상세 정보:\n` +
+                 `• 마지막 업데이트: ${stock.lastPriceUpdate ? `${hoursAgo}시간 전` : '업데이트 기록 없음'}\n` +
+                 `• 거래 가능 조건: 24시간 이내 가격 업데이트 필요\n\n` +
+                 `해결 방법:\n` +
+                 `1. 잠시 후 가격이 자동 업데이트될 때까지 기다려주세요\n` +
+                 `2. 선생님께 해당 종목의 가격 업데이트를 요청해주세요\n` +
+                 `3. 다른 최신 가격 정보가 있는 종목을 선택해주세요\n\n` +
+                 `참고: 안전한 투자를 위해 최신 가격 정보만 사용합니다`,
         code: 'PRICE_NOT_FRESH',
         data: {
           stockId: stock.id,
           symbol: stock.symbol,
           name: stock.name,
-          lastUpdate: stock.lastPriceUpdate
+          lastUpdate: stock.lastPriceUpdate,
+          hoursAgo: hoursAgo
         }
       });
     }
@@ -107,7 +128,7 @@ export const requireFreshPrice = async (req: Request, res: Response, next: NextF
     logger.error('Error in fresh price middleware:', error);
     return res.status(500).json({
       success: false,
-      message: 'Internal server error'
+      message: '서버 오류가 발생했습니다.'
     });
   }
 };

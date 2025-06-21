@@ -206,7 +206,7 @@ const WatchlistSetupPage: React.FC = () => {
           setTotalStocks(data.total || 0);
           setTotalPages(Math.ceil((data.total || 0) / itemsPerPage));
         } else {
-          throw new Error('Failed to search stocks');
+          throw new Error('\uc8fc\uc2dd \uac80\uc0c9\uc5d0 \uc2e4\ud328\ud588\uc2b5\ub2c8\ub2e4.');
         }
       } catch (error) {
         console.error('Error searching stocks:', error);
@@ -291,10 +291,16 @@ const WatchlistSetupPage: React.FC = () => {
 
       if (response.ok) {
         toast.success('관심종목이 저장되었습니다!');
-        navigate('/dashboard');
+        toast.info('💡 중요 안내: 관심종목 선정 후 24시간이 지나야 거래가 가능합니다. 이 시간 동안 선택한 종목들을 충분히 조사해보세요!', {
+          duration: 8000,
+          icon: '📅'
+        });
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 2000);
       } else {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to save watchlist');
+        throw new Error(errorData.message || '관심종목 저장에 실패했습니다');
       }
     } catch (error: any) {
       console.error('Error saving watchlist:', error);
@@ -322,10 +328,25 @@ const WatchlistSetupPage: React.FC = () => {
     <div className="max-w-7xl mx-auto p-6">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-4">관심종목 선택</h1>
-        <p className="text-gray-600 mb-4">
+        <p className="text-gray-600 mb-2">
           거래를 시작하기 전에 관심있는 종목을 최대 10개까지 선택해주세요.
           선택한 종목들의 가격이 실시간으로 업데이트됩니다.
         </p>
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+          <div className="flex items-start space-x-2">
+            <span className="text-2xl">💡</span>
+            <div>
+              <p className="font-semibold text-blue-900">중요 안내</p>
+              <p className="text-blue-800 text-sm mt-1">
+                관심종목 선정 후 <span className="font-bold">24시간이 지나야 거래가 가능</span>합니다.
+                이 시간 동안 선택한 종목들에 대해 충분히 조사하고 투자 전략을 세워보세요!
+              </p>
+              <p className="text-blue-700 text-xs mt-2">
+                ※ 관심종목은 하루에 한 번만 변경 가능합니다.
+              </p>
+            </div>
+          </div>
+        </div>
         {!canChange && (
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
             <p className="text-yellow-800">

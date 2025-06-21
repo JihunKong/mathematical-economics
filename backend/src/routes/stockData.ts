@@ -54,7 +54,7 @@ router.post('/backfill/:symbol', async (
     if (!validPeriods.includes(period)) {
       res.status(400).json({
         success: false,
-        message: 'Invalid period. Valid periods are: 1M, 3M, 6M, 1Y',
+        message: '\uc720\ud6a8\ud558\uc9c0 \uc54a\uc740 \uae30\uac04\uc785\ub2c8\ub2e4. \uc0ac\uc6a9 \uac00\ub2a5\ud55c \uae30\uac04: 1M, 3M, 6M, 1Y',
       });
       return;
     }
