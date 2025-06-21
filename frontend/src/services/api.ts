@@ -89,6 +89,7 @@ class ApiService {
           });
         } else if (errorData?.code === 'STOCK_NOT_ALLOWED') {
           // For stock not allowed errors, show detailed message
+          console.log('API Interceptor: Showing STOCK_NOT_ALLOWED toast');
           toast.error(message, {
             duration: 8000,
             style: {
@@ -96,12 +97,15 @@ class ApiService {
               whiteSpace: 'pre-line'
             }
           });
-        } else if (error.response?.status === 403 || error.response?.status === 423) {
-          // For other 403/423 errors (trading restrictions), don't show toast here
-          // Let the calling component handle the detailed error message
-          // Do nothing - let the error propagate to the calling component
+        } else if (error.response?.status === 403) {
+          // For 403 errors, don't show toast - let calling component handle it
+          console.log('API Interceptor: 403 error, not showing toast, letting component handle');
+        } else if (error.response?.status === 423) {
+          // For 423 errors, don't show toast - let calling component handle it  
+          console.log('API Interceptor: 423 error, not showing toast, letting component handle');
         } else {
           // Default error toast for other errors
+          console.log('API Interceptor: Showing default error toast');
           toast.error(message);
         }
         

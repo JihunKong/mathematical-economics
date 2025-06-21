@@ -148,7 +148,32 @@ export default function TradingPage() {
     
     try {
       if (tradeMode === 'buy') {
-        await api.buyStock(selectedStock.symbol, qty, reason);
+        // 직접 fetch로 테스트해보기
+        const token = localStorage.getItem('accessToken');
+        const directResponse = await fetch('/api/trading/buy', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            symbol: selectedStock.symbol,
+            quantity: qty,
+            reason: reason
+          })
+        });
+        
+        console.log('Direct fetch response status:', directResponse.status);
+        console.log('Direct fetch response ok:', directResponse.ok);
+        
+        const directResponseData = await directResponse.json();
+        console.log('Direct fetch response data:', directResponseData);
+        
+        if (!directResponse.ok) {
+          throw new Error(`HTTP ${directResponse.status}: ${JSON.stringify(directResponseData)}`);
+        }
+        
+        // await api.buyStock(selectedStock.symbol, qty, reason);
         toast.success('매수 주문이 완료되었습니다');
       } else {
         await api.sellStock(selectedStock.symbol, qty, reason);
@@ -161,9 +186,20 @@ export default function TradingPage() {
       fetchData();
     } catch (error: any) {
       console.error('Trade failed:', error);
+      console.log('Error has response?', !!error?.response);
       console.log('Error response status:', error?.response?.status);
       console.log('Error response data:', error?.response?.data);
-      console.log('Full error object:', error);
+      console.log('Error config:', error?.config);
+      console.log('Error request:', error?.request);
+      console.log('Error message:', error?.message);
+      console.log('Full error object keys:', Object.keys(error || {}));
+      
+      // 직접 error.response를 추출해보기
+      if (error && typeof error === 'object') {
+        for (const key in error) {
+          console.log(`Error.${key}:`, error[key]);
+        }
+      }
       
       // 403 오류인 경우 상세한 안내 메시지 표시
       if (error?.response?.status === 403) {
