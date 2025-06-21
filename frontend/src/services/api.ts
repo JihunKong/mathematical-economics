@@ -163,10 +163,6 @@ class ApiService {
     return response.data;
   }
 
-  async updateAllowedStocks(classId: string, stockIds: string[]) {
-    const response = await this.api.put(`/teacher/classes/${classId}/stocks`, { stockIds });
-    return response.data;
-  }
 
   async getStudentActivity(studentId: string) {
     const response = await this.api.get(`/teacher/students/${studentId}/activity`);

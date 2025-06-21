@@ -97,42 +97,6 @@ export const getClassDetails = async (
   }
 };
 
-// Update allowed stocks for a class
-export const updateAllowedStocks = async (
-  req: AuthRequest,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    if (req.user?.role !== 'TEACHER' && req.user?.role !== 'ADMIN') {
-      throw new AppError('Only teachers and admins can manage allowed stocks', 403);
-    }
-
-    const { classId } = req.params;
-    const { stockIds } = req.body;
-
-    if (!Array.isArray(stockIds)) {
-      throw new AppError('stockIds must be an array', 400);
-    }
-
-    if (stockIds.length > 50) {
-      throw new AppError('최대 50개 종목까지만 선택할 수 있습니다', 400);
-    }
-
-    const updatedStocks = await teacherService.updateAllowedStocks(
-      classId,
-      req.user.id,
-      stockIds
-    );
-
-    res.status(200).json({
-      success: true,
-      data: updatedStocks,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
 
 // Get student activity
 export const getStudentActivity = async (

@@ -43,7 +43,6 @@ export class TeacherService {
         _count: {
           select: {
             students: true,
-            allowedStocks: true,
           },
         },
       },
@@ -69,15 +68,6 @@ export class TeacherService {
             currentCash: true,
             createdAt: true,
           },
-        },
-        allowedStocks: {
-          include: {
-            stock: true,
-          },
-          where: {
-            isActive: true,
-          },
-          take: 50, // 성능을 위해 최대 50개로 제한
         },
       },
     });
@@ -119,105 +109,6 @@ export class TeacherService {
     };
   }
 
-  // Manage allowed stocks for a class
-  async updateAllowedStocks(
-    classId: string,
-    teacherId: string,
-    stockIds: string[]
-  ) {
-    // Validate stock count limit
-    if (stockIds.length > 50) {
-      throw new AppError('최대 50개 종목까지만 선택할 수 있습니다', 400);
-    }
-
-    // Verify teacher owns the class
-    const classData = await prisma.class.findFirst({
-      where: {
-        id: classId,
-        teacherId,
-      },
-    });
-
-    if (!classData) {
-      throw new AppError('Class not found', 404);
-    }
-
-    // Get current allowed stocks
-    const currentAllowed = await prisma.allowedStock.findMany({
-      where: { classId },
-    });
-
-    const currentStockIds = currentAllowed.map(a => a.stockId);
-    const toAdd = stockIds.filter(id => !currentStockIds.includes(id));
-    const toRemove = currentStockIds.filter(id => !stockIds.includes(id));
-
-    // Use transaction to update allowed stocks
-    await prisma.$transaction(async (tx) => {
-      // Deactivate removed stocks
-      if (toRemove.length > 0) {
-        await tx.allowedStock.updateMany({
-          where: {
-            classId,
-            stockId: { in: toRemove },
-          },
-          data: {
-            isActive: false,
-          },
-        });
-      }
-
-      // Add new stocks
-      if (toAdd.length > 0) {
-        const existingInactive = await tx.allowedStock.findMany({
-          where: {
-            classId,
-            stockId: { in: toAdd },
-            isActive: false,
-          },
-        });
-
-        const existingInactiveIds = existingInactive.map(e => e.stockId);
-        const reallyNew = toAdd.filter(id => !existingInactiveIds.includes(id));
-
-        // Reactivate existing inactive stocks
-        if (existingInactiveIds.length > 0) {
-          await tx.allowedStock.updateMany({
-            where: {
-              classId,
-              stockId: { in: existingInactiveIds },
-            },
-            data: {
-              isActive: true,
-            },
-          });
-        }
-
-        // Create new allowed stocks
-        if (reallyNew.length > 0) {
-          await tx.allowedStock.createMany({
-            data: reallyNew.map(stockId => ({
-              classId,
-              stockId,
-              addedBy: teacherId,
-            })),
-          });
-        }
-      }
-    });
-
-    // Return updated list
-    const updatedAllowed = await prisma.allowedStock.findMany({
-      where: {
-        classId,
-        isActive: true,
-      },
-      include: {
-        stock: true,
-      },
-    });
-
-    return updatedAllowed;
-  }
 
   // Update student's cash balance
   async updateStudentCash(teacherId: string, studentId: string, newCash: number) {

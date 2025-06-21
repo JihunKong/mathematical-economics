@@ -31,18 +31,6 @@ router.get(
   teacherController.getClassDetails
 );
 
-// Stock management
-router.put(
-  '/classes/:classId/stocks',
-  [
-    param('classId').notEmpty(),
-    body('stockIds').isArray().withMessage('stockIds must be an array'),
-    body('stockIds.*').isString().withMessage('Each stockId must be a string'),
-  ],
-  validate,
-  teacherController.updateAllowedStocks
-);
-
 // Student monitoring
 router.get(
   '/students/:studentId/activity',

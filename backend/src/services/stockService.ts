@@ -22,19 +22,6 @@ export class StockService {
         where.market = market;
       }
 
-      // If user is a student with a class, only show allowed stocks
-      if (user?.role === 'STUDENT' && user.classId) {
-        const allowedStocks = await prisma.allowedStock.findMany({
-          where: {
-            classId: user.classId,
-            isActive: true,
-          },
-          select: { stockId: true },
-        });
-
-        const allowedStockIds = allowedStocks.map(as => as.stockId);
-        where.id = { in: allowedStockIds };
-      }
       
       const stocks = await prisma.stock.findMany({
         where,
@@ -98,20 +85,6 @@ export class StockService {
       ],
     };
 
-    // If user is a student with a class, only search allowed stocks
-    if (user?.role === 'STUDENT' && user.classId) {
-      const allowedStocks = await prisma.allowedStock.findMany({
-        where: {
-          classId: user.classId,
-          isActive: true,
-        },
-        select: { stockId: true },
-        take: 50, // 성능 최적화를 위해 최대 50개로 제한
-      });
-
-      const allowedStockIds = allowedStocks.map(as => as.stockId);
-      where.AND.push({ id: { in: allowedStockIds } });
-    }
 
     const stocks = await prisma.stock.findMany({
       where,

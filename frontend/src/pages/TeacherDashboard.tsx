@@ -15,7 +15,6 @@ interface ClassData {
   isActive: boolean;
   _count: {
     students: number;
-    allowedStocks: number;
   };
 }
 
@@ -105,7 +104,6 @@ export default function TeacherDashboard() {
             <div className="space-y-2 text-sm text-gray-600">
               <p>클래스 코드: <span className="font-mono font-bold">{classItem.code}</span></p>
               <p>학생 수: <span className="font-semibold">{classItem._count.students}명</span></p>
-              <p>허용 종목: <span className="font-semibold">{classItem._count.allowedStocks}개</span></p>
               <p>시작일: {new Date(classItem.startDate).toLocaleDateString('ko-KR')}</p>
               {classItem.endDate && (
                 <p>종료일: {new Date(classItem.endDate).toLocaleDateString('ko-KR')}</p>
