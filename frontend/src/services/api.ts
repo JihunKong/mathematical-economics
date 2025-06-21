@@ -60,8 +60,45 @@ class ApiService {
           }
         }
 
-        const message = (error.response?.data as any)?.message || 'An error occurred';
-        toast.error(message);
+        const errorData = error.response?.data as any;
+        const message = errorData?.message || '알 수 없는 오류가 발생했습니다.';
+        
+        // Show detailed error message for specific error codes
+        if (errorData?.code === 'PRICE_NOT_FRESH') {
+          // For price not fresh errors, show the full detailed message
+          toast.error(message, {
+            duration: 8000, // Show for 8 seconds
+            style: {
+              maxWidth: '500px',
+              whiteSpace: 'pre-line' // Preserve line breaks
+            }
+          });
+        } else if (errorData?.code === 'WATCHLIST_REQUIRED') {
+          // For watchlist required errors
+          toast.error(message, {
+            duration: 6000,
+            style: {
+              maxWidth: '400px',
+              whiteSpace: 'pre-line'
+            }
+          });
+        } else if (errorData?.code === 'STOCK_NOT_ALLOWED') {
+          // For stock not allowed errors, show detailed message
+          toast.error(message, {
+            duration: 8000,
+            style: {
+              maxWidth: '500px',
+              whiteSpace: 'pre-line'
+            }
+          });
+        } else if (error.response?.status === 403 || error.response?.status === 423) {
+          // For other 403/423 errors (trading restrictions), don't show toast here
+          // Let the calling component handle the detailed error message
+          // Do nothing - let the error propagate to the calling component
+        } else {
+          // Default error toast for other errors
+          toast.error(message);
+        }
         
         return Promise.reject(error);
       }

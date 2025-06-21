@@ -46,7 +46,7 @@ export class TradingService {
         });
 
         if (!allowedStock) {
-          throw new AppError(`${stock.name}(${stock.symbol}) 종목은 거래가 허용되지 않았습니다.\n\n` +
+          const error = new AppError(`${stock.name}(${stock.symbol}) 종목은 거래가 허용되지 않았습니다.\n\n` +
             `거래 제한 사유:\n` +
             `• 선생님이 해당 종목을 교육용으로 허용하지 않았습니다\n` +
             `• 안전한 학습을 위해 선별된 종목만 거래 가능합니다\n\n` +
@@ -55,6 +55,8 @@ export class TradingService {
             `2. 선생님께 해당 종목의 거래 허용을 요청해주세요\n` +
             `3. 관심종목 설정에서 허용된 종목만 선택하세요\n\n` +
             `참고: 교육 목적상 선생님이 승인한 종목만 거래할 수 있습니다`, 403);
+          (error as any).code = 'STOCK_NOT_ALLOWED';
+          throw error;
         }
       }
 
@@ -186,7 +188,7 @@ export class TradingService {
         });
 
         if (!allowedStock) {
-          throw new AppError(`${stock.name}(${stock.symbol}) 종목은 거래가 허용되지 않았습니다.\n\n` +
+          const error = new AppError(`${stock.name}(${stock.symbol}) 종목은 거래가 허용되지 않았습니다.\n\n` +
             `거래 제한 사유:\n` +
             `• 선생님이 해당 종목을 교육용으로 허용하지 않았습니다\n` +
             `• 안전한 학습을 위해 선별된 종목만 거래 가능합니다\n\n` +
@@ -195,6 +197,8 @@ export class TradingService {
             `2. 선생님께 해당 종목의 거래 허용을 요청해주세요\n` +
             `3. 관심종목 설정에서 허용된 종목만 선택하세요\n\n` +
             `참고: 교육 목적상 선생님이 승인한 종목만 거래할 수 있습니다`, 403);
+          (error as any).code = 'STOCK_NOT_ALLOWED';
+          throw error;
         }
       }
 
