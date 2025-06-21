@@ -12,11 +12,13 @@ import stockManagementRoutes from './stockManagement';
 import stockDataRoutes from './stockData';
 import chartRoutes from './chart';
 import healthRoutes from './health';
+import watchlistRoutes from './watchlist';
 
 const router = Router();
 
 router.use('/health', healthRoutes);
 router.use('/auth', authRoutes);
+router.use('/watchlist', watchlistRoutes);
 router.use('/stocks', stocksRoutes);
 router.use('/trading', tradingRoutes);
 router.use('/portfolio', portfolioRoutes);

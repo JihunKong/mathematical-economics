@@ -1,6 +1,7 @@
 import cron from 'node-cron';
 import { prisma } from '../config/database';
 import { AggregatedStockService } from '../services/aggregatedStockService';
+import { watchlistService } from '../services/watchlistService';
 import { logger } from '../utils/logger';
 
 export class StockPriceCollector {
@@ -42,31 +43,23 @@ export class StockPriceCollector {
     logger.info('Stock price collector started - market hours: every 10min, off-hours: every 30min');
   }
 
-  // Collect prices for all tracked stocks
+  // Collect prices for watchlisted stocks only
   private async collectPrices() {
     this.isRunning = true;
     
     try {
       logger.info('Starting stock price collection cycle');
       
-      // Get all tracked stocks
-      const trackedStocks = await prisma.stock.findMany({
-        where: {
-          isTracked: true,
-          isActive: true
-        },
-        orderBy: {
-          symbol: 'asc'
-        }
-      });
+      // Get stocks that are in student watchlists
+      const trackedStocks = await watchlistService.getTrackedStocks();
 
       if (trackedStocks.length === 0) {
-        logger.info('No tracked stocks found');
+        logger.info('No watchlisted stocks found');
         this.isRunning = false;
         return;
       }
 
-      logger.info(`Found ${trackedStocks.length} tracked stocks to update`);
+      logger.info(`Found ${trackedStocks.length} watchlisted stocks to update`);
 
       // Process stocks in batches
       for (let i = 0; i < trackedStocks.length; i += this.batchSize) {
@@ -107,6 +100,9 @@ export class StockPriceCollector {
                     dayHigh: priceData.dayHigh,
                     dayLow: priceData.dayLow,
                     volume: BigInt(priceData.volume || 0),
+                    change: priceData.change,
+                    changePercent: priceData.changePercent,
+                    lastPriceUpdate: new Date()
                   }
                 });
 
