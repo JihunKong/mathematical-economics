@@ -23,7 +23,7 @@ RUN npm run build
 # Production stage
 FROM node:18-alpine
 
-# Install dependencies for Python, Puppeteer and OpenSSL
+# Install dependencies for Python, Puppeteer, OpenSSL and build tools
 RUN apk add --no-cache \
     openssl \
     chromium \
@@ -34,7 +34,11 @@ RUN apk add --no-cache \
     ca-certificates \
     ttf-freefont \
     python3 \
-    py3-pip
+    py3-pip \
+    make \
+    g++ \
+    gcc \
+    libc-dev
 
 # Install Python packages for crawler scripts
 RUN pip3 install requests beautifulsoup4 lxml aiohttp --break-system-packages
