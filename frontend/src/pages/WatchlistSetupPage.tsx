@@ -27,7 +27,7 @@ interface MarketStats {
 
 const WatchlistSetupPage: React.FC = () => {
   const navigate = useNavigate();
-  const { user, token } = useAppSelector((state) => state.auth);
+  const { user, accessToken } = useAppSelector((state) => state.auth);
   
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMarket, setSelectedMarket] = useState('ALL');
@@ -44,7 +44,7 @@ const WatchlistSetupPage: React.FC = () => {
       try {
         const response = await fetch('/api/watchlist/can-change', {
           headers: {
-            'Authorization': `Bearer ${token}`
+            'Authorization': `Bearer ${accessToken}`
           }
         });
         
@@ -57,10 +57,10 @@ const WatchlistSetupPage: React.FC = () => {
       }
     };
 
-    if (token) {
+    if (accessToken) {
       checkCanChange();
     }
-  }, [token]);
+  }, [accessToken]);
 
   // Load market statistics
   useEffect(() => {
@@ -68,7 +68,7 @@ const WatchlistSetupPage: React.FC = () => {
       try {
         const response = await fetch('/api/watchlist/stats', {
           headers: {
-            'Authorization': `Bearer ${token}`
+            'Authorization': `Bearer ${accessToken}`
           }
         });
         
@@ -81,10 +81,10 @@ const WatchlistSetupPage: React.FC = () => {
       }
     };
 
-    if (token) {
+    if (accessToken) {
       loadMarketStats();
     }
-  }, [token]);
+  }, [accessToken]);
 
   // Load existing watchlist
   useEffect(() => {
@@ -92,7 +92,7 @@ const WatchlistSetupPage: React.FC = () => {
       try {
         const response = await fetch('/api/watchlist', {
           headers: {
-            'Authorization': `Bearer ${token}`
+            'Authorization': `Bearer ${accessToken}`
           }
         });
         
@@ -106,15 +106,15 @@ const WatchlistSetupPage: React.FC = () => {
       }
     };
 
-    if (token) {
+    if (accessToken) {
       loadExistingWatchlist();
     }
-  }, [token]);
+  }, [accessToken]);
 
   // Search stocks
   useEffect(() => {
     const searchStocks = async () => {
-      if (!token) return;
+      if (!accessToken) return;
       
       setSearching(true);
       try {
@@ -125,7 +125,7 @@ const WatchlistSetupPage: React.FC = () => {
 
         const response = await fetch(`/api/watchlist/stocks?${params}`, {
           headers: {
-            'Authorization': `Bearer ${token}`
+            'Authorization': `Bearer ${accessToken}`
           }
         });
         
@@ -148,7 +148,7 @@ const WatchlistSetupPage: React.FC = () => {
     }, 300);
 
     return () => clearTimeout(debounceTimer);
-  }, [searchTerm, selectedMarket, token]);
+  }, [searchTerm, selectedMarket, accessToken]);
 
   const handleAddStock = (stock: Stock) => {
     if (selectedStocks.length >= 10) {
@@ -186,7 +186,7 @@ const WatchlistSetupPage: React.FC = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${accessToken}`
         },
         body: JSON.stringify({
           stockIds: selectedStocks.map(s => s.id)
