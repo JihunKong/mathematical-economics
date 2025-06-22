@@ -17,8 +17,9 @@ interface CrawledStockData {
   dayHigh: number;
   dayLow: number;
   volume: number;
-  timestamp: string;
+  timestamp: number;
   source: string;
+  success: boolean;
   error?: string;
 }
 
@@ -48,10 +49,9 @@ export class CrawlerStockService {
         logger.warn(`Crawler stderr for ${symbol}:`, stderr);
       }
       
-      const results = JSON.parse(stdout);
-      const result = results[0];
+      const result = JSON.parse(stdout);
       
-      if (!result.error && result.currentPrice > 0) {
+      if (result.success && result.currentPrice > 0) {
         logger.info(`Successfully crawled ${symbol} from ${result.source}: ${result.currentPrice}`);
         return result;
       } else if (result.error) {
@@ -60,8 +60,7 @@ export class CrawlerStockService {
         const fallbackCommand = `${this.pythonCommand} "${this.fallbackScriptPath}" "${symbol}"`;
         const { stdout } = await execAsync(fallbackCommand);
         
-        const fallbackResults = JSON.parse(stdout);
-        const fallbackResult = fallbackResults[0];
+        const fallbackResult = JSON.parse(stdout);
         
         logger.info(`Using fallback price for ${symbol}: ${fallbackResult.currentPrice}`);
         return fallbackResult;
