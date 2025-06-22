@@ -9,7 +9,7 @@ interface CacheConfig {
   userSession: number;     // 사용자 세션 캐시 시간 (초)
 }
 
-interface CacheStats {
+export interface CacheStats {
   hits: number;
   misses: number;
   errors: number;

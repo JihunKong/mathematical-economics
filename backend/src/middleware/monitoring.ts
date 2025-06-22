@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { logger } from '../utils/logger';
-import { cacheService } from '../services/cacheService-improved';
+import { cacheService, type CacheStats } from '../services/cacheService-improved';
 import os from 'os';
 import { prisma } from '../config/database';
 

@@ -176,14 +176,14 @@ export const jwtConfig = {
 };
 
 export const accessTokenOptions: SignOptions = {
-  expiresIn: jwtConfig.accessTokenExpiry,
+  expiresIn: jwtConfig.accessTokenExpiry as any,
   algorithm: 'HS256',
   issuer: jwtConfig.issuer,
   audience: jwtConfig.audience,
 };
 
 export const refreshTokenOptions: SignOptions = {
-  expiresIn: jwtConfig.refreshTokenExpiry,
+  expiresIn: jwtConfig.refreshTokenExpiry as any,
   algorithm: 'HS256',
   issuer: jwtConfig.issuer,
   audience: jwtConfig.audience,
