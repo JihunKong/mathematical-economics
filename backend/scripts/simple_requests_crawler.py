@@ -9,10 +9,11 @@ import time
 import random
 from urllib.parse import quote
 
-def get_stock_price_naver(symbol):
+def get_stock_price_naver(symbol, max_retries=3):
     """네이버 금융에서 주식 가격 조회 (requests 기반)"""
-    try:
-        # User-Agent 로테이션
+    for attempt in range(max_retries):
+        try:
+            # User-Agent 로테이션
         user_agents = [
             'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
