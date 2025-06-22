@@ -39,7 +39,7 @@ async function analyzeUsers() {
       holdings: {
         select: { id: true }
       },
-      watchlists: {
+      watchlist: {
         select: { id: true }
       }
     }
@@ -54,11 +54,11 @@ async function analyzeUsers() {
     return !users.some(student => student.classId === u.id);
   });
   
-  // 30일 이상 미접속 계정
+  // 30일 이상 업데이트 없는 계정 (lastLoginAt이 없으므로 updatedAt 사용)
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
   const inactiveUsers = users.filter(u => 
-    u.lastLoginAt && u.lastLoginAt < thirtyDaysAgo && u.role !== 'ADMIN'
+    u.updatedAt && u.updatedAt < thirtyDaysAgo && u.role !== 'ADMIN'
   );
 
   // 분석 결과 출력
@@ -90,10 +90,10 @@ async function analyzeUsers() {
     const reasons = [];
     if (studentsWithoutClass.includes(user)) reasons.push('학급 없음');
     if (teachersWithoutClass.includes(user)) reasons.push('담당 학생 없음');
-    if (inactiveUsers.includes(user)) reasons.push('30일 이상 미접속');
+    if (inactiveUsers.includes(user)) reasons.push('30일 이상 미활동');
     
     console.log(`- ${user.email} (${user.role}) - ${reasons.join(', ')}`);
-    console.log(`  거래: ${user.transactions.length}건, 보유종목: ${user.holdings.length}개, 관심종목: ${user.watchlists.length}개`);
+    console.log(`  거래: ${(user as any).transactions?.length || 0}건, 보유종목: ${(user as any).holdings?.length || 0}개, 관심종목: ${(user as any).watchlist?.length || 0}개`);
   });
 
   console.log(`\n${colors.green}보호되는 계정:${colors.reset}`);
