@@ -20,6 +20,10 @@ export const createApp = (): { app: Application; io: Server; httpServer: any } =
   patchBigIntJSON();
   
   const app = express();
+  
+  // Trust proxy (for rate limiter behind nginx)
+  app.set('trust proxy', 1);
+  
   const httpServer = createServer(app);
   
   const io = new Server(httpServer, {
@@ -62,7 +66,7 @@ export const createApp = (): { app: Application; io: Server; httpServer: any } =
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
-        console.error(`CORS blocked origin: ${origin}, allowed: ${allowedOrigins.join(', ')}`);
+        logger.warn(`CORS blocked origin: ${origin}`);
         callback(null, false);
       }
     },
@@ -70,7 +74,16 @@ export const createApp = (): { app: Application; io: Server; httpServer: any } =
   }));
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-  app.use(morgan('combined', { stream: { write: (message) => logger.info(message.trim()) } }));
+  // HTTP request logging only in development
+  if (process.env.NODE_ENV === 'development') {
+    app.use(morgan('dev'));
+  } else {
+    // In production, log only errors
+    app.use(morgan('combined', { 
+      stream: { write: (message) => logger.info(message.trim()) },
+      skip: (_req, res) => res.statusCode < 400
+    }));
+  }
 
   // Security middleware (suspicious activity detection)
   app.use(securityMiddleware);
