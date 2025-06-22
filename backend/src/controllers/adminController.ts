@@ -196,6 +196,118 @@ export const toggleUserStatus = async (req: Request, res: Response, next: NextFu
   }
 };
 
+// Delete user (works for both active and inactive users)
+export const deleteUser = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { userId } = req.params;
+
+    // Check if user exists
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { 
+        id: true, 
+        email: true, 
+        name: true, 
+        role: true,
+        teacherClasses: { select: { id: true } }
+      },
+    });
+
+    if (!user) {
+      throw new AppError('👤 사용자를 찾을 수 없습니다.\n\n' +
+        '🔍 사용자 ID를 다시 확인해주세요.', 404);
+    }
+
+    // Prevent deletion of admin users
+    if (user.role === 'ADMIN') {
+      throw new AppError('⚠️ 관리자 계정은 삭제할 수 없습니다.\n\n' +
+        '🔒 보안을 위해 관리자 계정 삭제는 제한됩니다.', 403);
+    }
+
+    // Use transaction to ensure data consistency
+    await prisma.$transaction(async (tx) => {
+      // 1. Delete related data first to avoid foreign key constraints
+
+      // Delete transactions
+      await tx.transaction.deleteMany({
+        where: { userId }
+      });
+
+      // Delete holdings
+      await tx.holding.deleteMany({
+        where: { userId }
+      });
+
+      // Delete portfolios
+      await tx.portfolio.deleteMany({
+        where: { userId }
+      });
+
+      // Delete watchlist entries
+      await tx.watchlist.deleteMany({
+        where: { userId }
+      });
+
+      // Delete notifications
+      await tx.notification.deleteMany({
+        where: { userId }
+      });
+
+      // 2. Handle teacher-specific deletions
+      if (user.role === 'TEACHER' && user.teacherClasses.length > 0) {
+        // Get all classes taught by this teacher
+        const teacherClasses = await tx.class.findMany({
+          where: { teacherId: userId },
+          include: { students: true }
+        });
+
+        for (const classItem of teacherClasses) {
+          // Remove students from the class
+          await tx.user.updateMany({
+            where: { classId: classItem.id },
+            data: { classId: null }
+          });
+
+          // Delete allowed stocks for this class
+          await tx.allowedStock.deleteMany({
+            where: { classId: classItem.id }
+          });
+
+          // Delete the class
+          await tx.class.delete({
+            where: { id: classItem.id }
+          });
+        }
+      }
+
+      // 3. If user is a student, remove from class
+      if (user.role === 'STUDENT') {
+        // No need to do anything special, just remove the user
+      }
+
+      // 4. Finally delete the user
+      await tx.user.delete({
+        where: { id: userId }
+      });
+    });
+
+    res.json({
+      success: true,
+      message: `사용자 ${user.name} (${user.email})가 성공적으로 삭제되었습니다.`,
+      data: {
+        deletedUser: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role
+        }
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // Create teacher account directly by admin
 export const createTeacherAccount = async (req: Request, res: Response, next: NextFunction) => {
   try {

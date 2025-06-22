@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store';
 import { Navigate } from 'react-router-dom';
-import { Users, UserCheck, UserX, Key, Power, PowerOff } from 'lucide-react';
+import { Users, UserCheck, UserX, Key, Power, PowerOff, Trash2 } from 'lucide-react';
 import clsx from 'clsx';
 
 interface User {
@@ -120,6 +120,30 @@ export default function AdminPage() {
     } catch (error) {
       console.error('Failed to toggle user status:', error);
       toast.error('사용자 상태 변경에 실패했습니다');
+    }
+  };
+
+  const handleDeleteUser = async (userId: string, userName: string, userRole: string) => {
+    const roleDisplay = getRoleDisplay(userRole);
+    
+    if (!confirm(`정말로 "${userName}" (${roleDisplay}) 계정을 삭제하시겠습니까?\n\n⚠️ 이 작업은 되돌릴 수 없으며, 다음 데이터가 모두 삭제됩니다:\n• 사용자 정보\n• 거래 내역\n• 포트폴리오\n• 관심종목\n• 클래스 정보 (교사인 경우)\n\n삭제하려면 "확인"을 누르세요.`)) {
+      return;
+    }
+
+    // 추가 확인
+    const confirmText = prompt(`정말로 삭제하시겠습니까? 확인하려면 "${userName}"을 입력하세요:`);
+    if (confirmText !== userName) {
+      toast.error('사용자 이름이 일치하지 않습니다');
+      return;
+    }
+
+    try {
+      await api.delete(`/admin/users/${userId}/delete`);
+      toast.success(`${userName} 계정이 성공적으로 삭제되었습니다`);
+      fetchData();
+    } catch (error: any) {
+      console.error('Failed to delete user:', error);
+      toast.error(error.response?.data?.message || '사용자 삭제에 실패했습니다');
     }
   };
 
@@ -354,7 +378,7 @@ export default function AdminPage() {
                       {user.class ? `${user.class.name} (${user.class.code})` : '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex space-x-2">
+                      <div className="flex flex-wrap gap-1">
                         {user.role !== 'ADMIN' && (
                           <>
                             <button
@@ -364,18 +388,21 @@ export default function AdminPage() {
                                 userName: user.name
                               })}
                               className="inline-flex items-center px-2 py-1 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50"
+                              title="비밀번호 재설정"
                             >
                               <Key className="w-3 h-3 mr-1" />
-                              비밀번호 재설정
+                              비밀번호
                             </button>
+                            
                             <button
                               onClick={() => handleToggleUserStatus(user.id, user.isActive)}
                               className={clsx(
                                 'inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-white',
                                 user.isActive
-                                  ? 'bg-red-600 hover:bg-red-700'
+                                  ? 'bg-yellow-600 hover:bg-yellow-700'
                                   : 'bg-green-600 hover:bg-green-700'
                               )}
+                              title={user.isActive ? '사용자 비활성화' : '사용자 활성화'}
                             >
                               {user.isActive ? (
                                 <>
@@ -388,6 +415,16 @@ export default function AdminPage() {
                                   활성화
                                 </>
                               )}
+                            </button>
+
+                            {/* 삭제 버튼 - 특히 비활성 사용자에게 유용 */}
+                            <button
+                              onClick={() => handleDeleteUser(user.id, user.name, user.role)}
+                              className="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-white bg-red-600 hover:bg-red-700"
+                              title={`${user.name} 계정 삭제 (복구 불가)`}
+                            >
+                              <Trash2 className="w-3 h-3 mr-1" />
+                              삭제
                             </button>
                           </>
                         )}

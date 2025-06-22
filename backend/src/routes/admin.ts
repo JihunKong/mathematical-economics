@@ -13,6 +13,7 @@ router.get('/users/pending', adminController.getPendingUsers);
 router.get('/users', adminController.getAllUsers);
 router.put('/users/:userId/approve', adminController.approveUser);
 router.delete('/users/:userId/reject', adminController.rejectUser);
+router.delete('/users/:userId/delete', adminController.deleteUser); // New comprehensive delete endpoint
 router.put('/users/:userId/reset-password', adminController.resetUserPassword);
 router.put('/users/:userId/toggle-status', adminController.toggleUserStatus);
 router.post('/users/create-teacher', adminController.createTeacherAccount);
