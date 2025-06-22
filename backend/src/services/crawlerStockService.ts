@@ -32,8 +32,12 @@ export class CrawlerStockService {
     // Use improved requests crawler as primary option (with retry logic)
     this.pythonScriptPath = path.join(__dirname, '../../scripts/improved_requests_crawler.py');
     this.fallbackScriptPath = path.join(__dirname, '../../scripts/advanced_multi_crawler.py');
-    // Try to use python3 first, fallback to python
-    this.pythonCommand = 'python3';
+    // Use absolute path to python3 for production environment
+    this.pythonCommand = process.env.PYTHON_PATH || '/usr/bin/python3';
+    
+    // 경로 확인 로그
+    logger.info(`Python command path: ${this.pythonCommand}`);
+    logger.info(`Script path: ${this.pythonScriptPath}`);
   }
 
   // 단일 종목 크롤링
@@ -41,9 +45,12 @@ export class CrawlerStockService {
     try {
       logger.info(`Crawling stock price for ${symbol}`);
       
-      // Try multi-finance crawler
+      // Try multi-finance crawler with explicit environment
       const command = `${this.pythonCommand} "${this.pythonScriptPath}" "${symbol}"`;
-      const { stdout, stderr } = await execAsync(command);
+      const { stdout, stderr } = await execAsync(command, {
+        env: { ...process.env, PYTHONPATH: path.dirname(this.pythonScriptPath) },
+        timeout: 30000 // 30초 타임아웃
+      });
       
       if (stderr && !stderr.includes('Crawling')) {
         logger.warn(`Crawler stderr for ${symbol}:`, stderr);

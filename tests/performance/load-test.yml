@@ -1,0 +1,115 @@
+config:
+  target: 'http://localhost:5000'
+  phases:
+    - duration: 30
+      arrivalRate: 5
+      name: "Warm up"
+    - duration: 120
+      arrivalRate: 20
+      name: "Normal load"
+    - duration: 60
+      arrivalRate: 50
+      name: "High load"
+  defaults:
+    headers:
+      Content-Type: 'application/json'
+  processor: "./load-test-processor.js"
+
+scenarios:
+  - name: "User Journey - Student Trading"
+    weight: 60
+    flow:
+      # 로그인
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "{{ email }}"
+            password: "{{ password }}"
+          capture:
+            - json: "$.accessToken"
+              as: "token"
+      
+      # 대시보드 접근
+      - get:
+          url: "/api/portfolio"
+          headers:
+            Authorization: "Bearer {{ token }}"
+      
+      # 주식 목록 조회
+      - get:
+          url: "/api/stocks"
+          headers:
+            Authorization: "Bearer {{ token }}"
+      
+      # 특정 주식 상세 조회
+      - get:
+          url: "/api/stocks/005930"
+          headers:
+            Authorization: "Bearer {{ token }}"
+      
+      # 주식 차트 데이터 조회
+      - get:
+          url: "/api/chart/005930?interval=1d&range=1m"
+          headers:
+            Authorization: "Bearer {{ token }}"
+      
+      # 매수 시도
+      - post:
+          url: "/api/trading/buy"
+          headers:
+            Authorization: "Bearer {{ token }}"
+          json:
+            symbol: "005930"
+            quantity: 10
+            reason: "Performance test buy order"
+          
+      # 포트폴리오 재조회
+      - get:
+          url: "/api/portfolio"
+          headers:
+            Authorization: "Bearer {{ token }}"
+            
+      # 거래 내역 조회
+      - get:
+          url: "/api/trading/history"
+          headers:
+            Authorization: "Bearer {{ token }}"
+
+  - name: "Leaderboard Check"
+    weight: 20
+    flow:
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "{{ email }}"
+            password: "{{ password }}"
+          capture:
+            - json: "$.accessToken"
+              as: "token"
+      
+      - get:
+          url: "/api/leaderboard"
+          headers:
+            Authorization: "Bearer {{ token }}"
+
+  - name: "Stock Price Updates"
+    weight: 20
+    flow:
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "{{ email }}"
+            password: "{{ password }}"
+          capture:
+            - json: "$.accessToken"
+              as: "token"
+      
+      - loop:
+          count: 5
+          actions:
+            - get:
+                url: "/api/stocks/{{ $randomString() }}"
+                headers:
+                  Authorization: "Bearer {{ token }}"
+                ifTrue: "{{ $randomNumber(1, 10) > 5 }}"
+            - think: 2
