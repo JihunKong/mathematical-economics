@@ -28,9 +28,9 @@ export class CrawlerStockService {
   private pythonCommand: string;
 
   constructor() {
-    // Use advanced multi crawler as primary option
-    this.pythonScriptPath = path.join(__dirname, '../../scripts/advanced_multi_crawler.py');
-    this.fallbackScriptPath = path.join(__dirname, '../../scripts/public_api_crawler.py');
+    // Use simple requests crawler as primary option (no aiohttp dependency)
+    this.pythonScriptPath = path.join(__dirname, '../../scripts/simple_requests_crawler.py');
+    this.fallbackScriptPath = path.join(__dirname, '../../scripts/advanced_multi_crawler.py');
     // Try to use python3 first, fallback to python
     this.pythonCommand = 'python3';
   }
