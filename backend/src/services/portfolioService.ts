@@ -41,9 +41,9 @@ export class PortfolioService {
     const updatedHoldings = holdings.map(holding => {
       const currentValue = holding.quantity * holding.stock.currentPrice;
       const profitLoss = currentValue - holding.totalCost;
-      const profitLossPercent = (profitLoss / holding.totalCost) * 100;
+      const profitLossPercent = holding.totalCost > 0 ? (profitLoss / holding.totalCost) * 100 : 0;
       const dayChange = (holding.stock.currentPrice - holding.stock.previousClose) * holding.quantity;
-      const dayChangePercent = ((holding.stock.currentPrice - holding.stock.previousClose) / holding.stock.previousClose) * 100;
+      const dayChangePercent = holding.stock.previousClose > 0 ? ((holding.stock.currentPrice - holding.stock.previousClose) / holding.stock.previousClose) * 100 : 0;
 
       return {
         id: holding.id,
@@ -68,17 +68,17 @@ export class PortfolioService {
     const totalInvestedAmount = user.initialCapital - user.currentCash + 
       updatedHoldings.reduce((sum, holding) => sum + holding.totalCost, 0);
     const totalProfitLoss = totalPortfolioValue - user.initialCapital;
-    const totalProfitLossPercent = (totalProfitLoss / user.initialCapital) * 100;
+    const totalProfitLossPercent = user.initialCapital > 0 ? (totalProfitLoss / user.initialCapital) * 100 : 0;
 
     // Calculate holdings weights
     updatedHoldings.forEach(holding => {
-      holding.weight = (holding.currentValue / totalPortfolioValue) * 100;
+      holding.weight = totalPortfolioValue > 0 ? (holding.currentValue / totalPortfolioValue) * 100 : 0;
     });
 
     // Calculate daily change
     const dailyChange = updatedHoldings.reduce((sum, holding) => sum + holding.dayChange, 0);
-    const dailyChangePercent = totalHoldingsValue > 0 ? 
-      (dailyChange / (totalHoldingsValue - dailyChange)) * 100 : 0;
+    const yesterdayValue = totalHoldingsValue - dailyChange;
+    const dailyChangePercent = yesterdayValue > 0 ? (dailyChange / yesterdayValue) * 100 : 0;
 
     return {
       cash: user.currentCash,
@@ -89,7 +89,7 @@ export class PortfolioService {
       dailyChange,
       dailyChangePercent,
       holdings: updatedHoldings,
-      cashWeight: (user.currentCash / totalPortfolioValue) * 100,
+      cashWeight: totalPortfolioValue > 0 ? (user.currentCash / totalPortfolioValue) * 100 : 100,
     };
   }
 
@@ -121,7 +121,7 @@ export class PortfolioService {
       totalCost: holding.totalCost,
       currentValue: holding.quantity * holding.stock.currentPrice,
       profitLoss: (holding.quantity * holding.stock.currentPrice) - holding.totalCost,
-      profitLossPercent: ((holding.quantity * holding.stock.currentPrice) - holding.totalCost) / holding.totalCost * 100,
+      profitLossPercent: holding.totalCost > 0 ? (((holding.quantity * holding.stock.currentPrice) - holding.totalCost) / holding.totalCost * 100) : 0,
     }));
   }
 

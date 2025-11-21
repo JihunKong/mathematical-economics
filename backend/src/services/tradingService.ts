@@ -124,7 +124,7 @@ export class TradingService {
             totalCost: newTotalCost,
             currentValue: newQuantity * currentPrice,
             profitLoss: (newQuantity * currentPrice) - newTotalCost,
-            profitLossPercent: ((newQuantity * currentPrice) - newTotalCost) / newTotalCost * 100,
+            profitLossPercent: newTotalCost > 0 ? (((newQuantity * currentPrice) - newTotalCost) / newTotalCost * 100) : 0,
           },
         });
       } else {
@@ -260,7 +260,7 @@ export class TradingService {
             totalCost: remainingTotalCost,
             currentValue: remainingQuantity * currentPrice,
             profitLoss: (remainingQuantity * currentPrice) - remainingTotalCost,
-            profitLossPercent: ((remainingQuantity * currentPrice) - remainingTotalCost) / remainingTotalCost * 100,
+            profitLossPercent: remainingTotalCost > 0 ? (((remainingQuantity * currentPrice) - remainingTotalCost) / remainingTotalCost * 100) : 0,
           },
         });
       }
