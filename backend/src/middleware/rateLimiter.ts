@@ -3,7 +3,7 @@ import { Request, Response } from 'express';
 
 export const rateLimiter = rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'), // 15 minutes
-  max: parseInt(process.env.RATE_LIMIT_MAX || '100'), // Limit each IP to 100 requests per windowMs
+  max: parseInt(process.env.RATE_LIMIT_MAX || '500'), // Limit each IP to 500 requests per windowMs (100 → 500)
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
@@ -18,7 +18,7 @@ export const rateLimiter = rateLimit({
 // Rate limiter for auth endpoints - 크롤러와 분리
 export const authRateLimiter = rateLimit({
   windowMs: 5 * 60 * 1000, // 5 minutes
-  max: 50, // IP당 5분에 50번 (충분히 관대함)
+  max: 100, // IP당 5분에 100번 (50 → 100)
   message: 'Too many authentication attempts, please try again later.',
   skipSuccessfulRequests: true, // 성공한 요청은 카운트하지 않음
   skip: (req) => {
@@ -31,7 +31,7 @@ export const authRateLimiter = rateLimit({
 // 주식 관련 엔드포인트를 위한 더 관대한 rate limiter
 export const stockRateLimiter = rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '60000'), // 1 minute
-  max: 200, // Limit each IP to 200 requests per minute
+  max: 500, // Limit each IP to 500 requests per minute (200 → 500)
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
@@ -48,7 +48,7 @@ export const stockRateLimiter = rateLimit({
 // 거래 관련 엔드포인트를 위한 rate limiter
 export const tradingRateLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
-  max: 30, // Limit each IP to 30 trades per minute
+  max: 60, // Limit each IP to 60 trades per minute (30 → 60)
   message: 'Too many trading requests, please slow down.',
   standardHeaders: true,
   legacyHeaders: false

@@ -1,0 +1,66 @@
+# Multi-stage Dockerfile optimized for t3.small (2GB RAM)
+# Stage 1: Build stage
+FROM node:20-alpine AS builder
+
+# Install build dependencies
+RUN apk add --no-cache python3 make g++ openssl libc6-compat
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+COPY prisma ./prisma/
+
+# Install ALL dependencies (including devDependencies for build)
+RUN npm ci
+
+# Copy source code
+COPY . .
+
+# Generate Prisma client
+RUN npx prisma generate
+
+# Build TypeScript
+RUN npm run build
+
+# Prune dev dependencies
+RUN npm prune --production
+
+# Stage 2: Production stage (minimal image)
+FROM node:20-alpine
+
+# Install runtime dependencies only
+RUN apk add --no-cache python3 openssl libc6-compat curl
+
+WORKDIR /app
+
+# Copy only necessary files from builder
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/package.json ./package.json
+
+# Copy data directory for curated stocks
+COPY --from=builder /app/data ./data
+
+# Copy improved_requests_crawler.py (only one we need)
+COPY --from=builder /app/scripts/improved_requests_crawler.py ./scripts/improved_requests_crawler.py
+
+# Create directories for logs and uploads
+RUN mkdir -p logs uploads
+
+# Set environment variables
+ENV NODE_ENV=production
+
+# Expose port
+EXPOSE 5000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 --start-period=40s \
+  CMD node -e "require('http').get('http://localhost:5000/health', (res) => process.exit(res.statusCode === 200 ? 0 : 1))"
+
+# Run as non-root user for security
+USER node
+
+# Start the application
+CMD ["node", "dist/server.js"]

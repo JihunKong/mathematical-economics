@@ -43,14 +43,14 @@ const rateLimiter = redis
   ? new RateLimiterRedis({
       storeClient: redis,
       keyPrefix: 'security_limiter',
-      points: 100, // 요청 수
+      points: 1800, // 요청 수 (300 → 1800 = 30 req/sec)
       duration: 60, // 60초
-      blockDuration: 600, // 10분 차단
+      blockDuration: 300, // 5분 차단
     })
   : new RateLimiterMemory({
-      points: 100,
+      points: 1800,
       duration: 60,
-      blockDuration: 600,
+      blockDuration: 300,
     });
 
 // 엄격한 rate limiter (로그인 시도 등)
@@ -58,14 +58,14 @@ const strictRateLimiter = redis
   ? new RateLimiterRedis({
       storeClient: redis,
       keyPrefix: 'strict_limiter',
-      points: 5,
+      points: 20, // 5 → 20
       duration: 900, // 15분
-      blockDuration: 3600, // 1시간 차단
+      blockDuration: 1800, // 30분 차단 (1시간 → 30분)
     })
   : new RateLimiterMemory({
-      points: 5,
+      points: 20,
       duration: 900,
-      blockDuration: 3600,
+      blockDuration: 1800,
     });
 
 // IP 추출 함수
@@ -117,7 +117,13 @@ export async function securityMiddleware(
   next: NextFunction
 ): Promise<void> {
   const clientIp = getClientIp(req);
-  
+
+  // Skip rate limiting for localhost/internal requests
+  if (clientIp === '127.0.0.1' || clientIp === '::1' || clientIp === 'localhost' || clientIp?.includes('127.0.0.1')) {
+    next();
+    return;
+  }
+
   try {
     // 차단된 IP 확인
     if (blockedIPs.has(clientIp)) {

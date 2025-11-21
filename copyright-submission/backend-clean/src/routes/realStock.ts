@@ -1,0 +1,36 @@
+import { Router } from 'express';
+import { authenticate, authorize } from '../middleware/auth';
+
+import * as realStockController from '../controllers/realStockController'에러가 발생했습니다'/:symbol/price', realStockController.getRealTimePrice);
+
+// 차트 데이터 조회
+router.get('/:symbol/chart', realStockController.getChartData);
+
+// 차트 이미지 조회
+router.get('/:symbol/chart-image', realStockController.getChartImage);
+
+// 주식 뉴스 조회
+router.get('/:symbol/news', realStockController.getStockNews);
+
+// 재무 데이터 조회
+router.get('/:symbol/financial', realStockController.getFinancialData);
+
+// 호가 정보 조회
+router.get('/:symbol/orderbook', realStockController.getOrderbook);
+
+// 인기 종목 조회
+router.get('/popular/list', realStockController.getPopularStocks);
+
+// 교사와 관리자만 접근 가능한 엔드포인트
+router.use(authorize('TEACHER', 'ADMIN'));
+
+// 종목 초기화 (한국투자증권 API에서 가져오기)
+router.post('/initialize', realStockController.initializeStock);
+
+// 여러 종목 가격 일괄 업데이트
+router.post('/update-prices', realStockController.updateMultiplePrices);
+
+// 모든 활성 종목 가격 업데이트
+router.post('/update-all-prices', realStockController.updateAllActivePrices);
+
+export default router;

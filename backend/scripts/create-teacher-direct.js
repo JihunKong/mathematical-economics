@@ -1,6 +1,6 @@
 // Direct teacher creation script for immediate use
 const { PrismaClient } = require('@prisma/client');
-const bcrypt = require('bcryptjs');
+const bcrypt = require('bcrypt');
 
 const prisma = new PrismaClient();
 

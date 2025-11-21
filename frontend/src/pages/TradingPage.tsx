@@ -115,8 +115,9 @@ export default function TradingPage() {
         setNeedsWatchlist(true);
       } else if (error?.response?.data?.message?.includes('24시간')) {
         toast.error(error.response.data.message);
-        toast.info('💡 관심종목 선정 후 24시간이 지나야 거래가 가능합니다. 이 시간 동안 종목에 대해 충분히 조사해보세요!', {
-          duration: 6000
+        toast('💡 관심종목 선정 후 24시간이 지나야 거래가 가능합니다. 이 시간 동안 종목에 대해 충분히 조사해보세요!', {
+          duration: 6000,
+          icon: 'ℹ️'
         });
       } else {
         toast.error('데이터를 불러오는데 실패했습니다');

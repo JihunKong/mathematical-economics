@@ -15,6 +15,7 @@
     "prisma:studio": "prisma studio",
     "prisma:seed": "ts-node prisma/seed.ts",
     "import:stocks": "ts-node scripts/importStocks.ts",
+    "import:curated": "ts-node scripts/importCuratedStocks.ts",
     "create:teachers": "ts-node scripts/createTeacherAccount.ts"
   },
   "prisma": {

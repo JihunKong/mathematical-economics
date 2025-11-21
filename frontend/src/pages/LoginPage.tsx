@@ -52,10 +52,9 @@ export default function LoginPage() {
       console.error('Login error:', error);
       console.error('Error response:', error.response);
       dispatch(loginFailure());
-      
-      // More specific error message
-      const errorMessage = error.response?.data?.message || '이메일 또는 비밀번호가 올바르지 않습니다.';
-      toast.error(errorMessage);
+
+      // Error toast is already handled by api.ts interceptor
+      // No need to call toast.error here to avoid duplicate messages
     } finally {
       setIsLoading(false);
     }

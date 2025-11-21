@@ -8,6 +8,10 @@ import { KISService } from './kisService';
 import { DatabaseStockService } from './databaseStockService';
 import { CrawlerStockService } from './crawlerStockService';
 import { prisma } from '../config/database';
+import {
+  getCurrencyFromMarket,
+  ensurePriceInKRW,
+} from '../config/exchangeRates';
 
 interface StockPriceData {
   symbol: string;
@@ -46,8 +50,36 @@ export class AggregatedStockService {
     this.crawler = new CrawlerStockService();
   }
 
+  // Helper method to convert price data to KRW
+  private convertPriceDataToKRW(data: StockPriceData, currency: string): StockPriceData {
+    // If already in KRW, return as is
+    if (currency === 'KRW') {
+      return data;
+    }
+
+    // Convert all price fields to KRW
+    return {
+      ...data,
+      currentPrice: ensurePriceInKRW(data.currentPrice, currency),
+      previousClose: ensurePriceInKRW(data.previousClose, currency),
+      change: ensurePriceInKRW(data.change, currency),
+      dayOpen: ensurePriceInKRW(data.dayOpen, currency),
+      dayHigh: ensurePriceInKRW(data.dayHigh, currency),
+      dayLow: ensurePriceInKRW(data.dayLow, currency),
+    };
+  }
+
   // 여러 소스에서 주식 가격 조회 (폴백 전략)
   async getStockPrice(symbol: string): Promise<StockPriceData | null> {
+    // First, get stock info from database to determine currency
+    const stockInfo = await prisma.stock.findUnique({
+      where: { symbol },
+      select: { market: true, currency: true },
+    });
+
+    // Determine currency - use stored currency or derive from market
+    const currency = stockInfo?.currency || (stockInfo ? getCurrencyFromMarket(stockInfo.market) : 'KRW');
+
     const services = {
       naverV1: () => this.naverV1.getStockPrice(symbol),
       // naverV2: () => this.naverV2.getStockPrice(symbol),
@@ -81,10 +113,12 @@ export class AggregatedStockService {
     for (const serviceName of this.fallbackPriority) {
       try {
         logger.info(`Trying to fetch ${symbol} from ${serviceName}`);
-        const data = await services[serviceName as keyof typeof services]();
-        
+        let data = await services[serviceName as keyof typeof services]();
+
         if (data && data.currentPrice > 0) {
-          logger.info(`Successfully fetched ${symbol} from ${serviceName}`);
+          // Convert prices to KRW if needed
+          data = this.convertPriceDataToKRW(data, currency);
+          logger.info(`Successfully fetched ${symbol} from ${serviceName} (currency: ${currency})`);
           return { ...data, hasRealPrice: true };
         }
       } catch (error: any) {

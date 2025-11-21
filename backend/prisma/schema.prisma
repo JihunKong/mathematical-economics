@@ -65,8 +65,10 @@ model Stock {
   name             String                  // 한글 종목명
   nameEn           String?                 // 영문 종목명
   shortName        String?                 // 단축명
-  market           String                  // KOSPI, KOSDAQ
+  market           String                  // KOSPI, KOSDAQ, NASDAQ, NYSE, OTC
   sector           String?
+  currency         String         @default("KRW") // KRW, USD, EUR, JPY, CHF
+  region           String         @default("Korea") // Korea, US, Global
   currentPrice     Float          @default(0)
   previousClose    Float          @default(0)
   dayOpen          Float?

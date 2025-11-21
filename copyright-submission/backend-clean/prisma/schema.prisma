@@ -1,0 +1,116 @@
+// This is your Prisma schema file,
+
+
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL"에러가 발생했습니다"TeacherClasses"에러가 발생했습니다"TeacherClasses"에러가 발생했습니다"005930"에러가 발생했습니다"mock") // mock, kis, alphaVantage, naver, etc.
+  createdAt        DateTime       @default(now())
+
+  // Relations
+  stock            Stock          @relation(fields: [stockId], references: [id], onDelete: Cascade)
+  
+  @@index([symbol, timestamp(sort: Desc)])
+  @@index([stockId])
+  @@index([timestamp])
+}
+
+model Leaderboard {
+  id               String         @id @default(cuid())
+  userId           String
+  classId          String?
+  totalReturn      Float
+  totalReturnPercent Float
+  winRate          Float
+  totalTrades      Int
+  rank             Int
+  period           LeaderboardPeriod
+  updatedAt        DateTime       @default(now())
+
+  @@unique([userId, classId, period])
+  @@index([classId, period])
+  @@index([rank])
+}
+
+model Notification {
+  id               String         @id @default(cuid())
+  userId           String
+  type             NotificationType
+  title            String
+  message          String
+  isRead           Boolean        @default(false)
+  createdAt        DateTime       @default(now())
+
+  // Relations
+  user             User           @relation(fields: [userId], references: [id])
+  
+  @@index([userId, isRead])
+  @@index([createdAt])
+}
+
+
+model AllowedStock {
+  id               String         @id @default(cuid())
+  classId          String
+  stockId          String
+  isActive         Boolean        @default(true)
+  addedBy          String         // Teacher who added this stock
+  createdAt        DateTime       @default(now())
+  
+  // Relations
+  class            Class          @relation(fields: [classId], references: [id])
+  stock            Stock          @relation(fields: [stockId], references: [id])
+  
+  @@unique([classId, stockId])
+  @@index([classId])
+  @@index([stockId])
+}
+
+
+model Watchlist {
+  id               String         @id @default(cuid())
+  userId           String
+  stockId          String
+  order            Int            @default(0) // Display order (1-10)
+  addedAt          DateTime       @default(now())
+  
+  // Relations
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stock            Stock          @relation(fields: [stockId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, stockId])
+  @@unique([userId, order])
+  @@index([userId])
+  @@index([stockId])
+}
+
+// Enums
+enum UserRole {
+  GUEST
+  STUDENT
+  TEACHER
+  ADMIN
+}
+
+enum TransactionType {
+  BUY
+  SELL
+}
+
+enum LeaderboardPeriod {
+  DAILY
+  WEEKLY
+  MONTHLY
+  ALL_TIME
+}
+
+enum NotificationType {
+  TRADE_EXECUTED
+  PRICE_ALERT
+  SYSTEM
+  ACHIEVEMENT
+}

@@ -1,0 +1,58 @@
+symbol,name,nameEn,shortName,market,sector,region,educationalPriority,currentPrice
+005930,삼성전자,Samsung Electronics,삼성전자,KOSPI,IT,Korea,HIGH,71000
+000660,SK하이닉스,SK Hynix,SK하이닉스,KOSPI,IT,Korea,HIGH,130000
+035720,카카오,Kakao,카카오,KOSPI,IT,Korea,HIGH,45000
+035420,네이버,NAVER,네이버,KOSPI,IT,Korea,HIGH,195000
+066570,LG전자,LG Electronics,LG전자,KOSPI,IT,Korea,MEDIUM,120000
+005380,현대차,Hyundai Motor,현대차,KOSPI,Auto,Korea,HIGH,195000
+000270,기아,Kia,기아,KOSPI,Auto,Korea,HIGH,90000
+105560,KB금융,KB Financial,KB금융,KOSPI,Finance,Korea,HIGH,65000
+055550,신한지주,Shinhan Financial,신한지주,KOSPI,Finance,Korea,MEDIUM,42000
+086790,하나금융지주,Hana Financial,하나금융지주,KOSPI,Finance,Korea,MEDIUM,55000
+352820,하이브,HYBE,하이브,KOSPI,Entertainment,Korea,HIGH,185000
+041510,에스엠,SM Entertainment,에스엠,KOSPI,Entertainment,Korea,MEDIUM,80000
+035900,JYP Ent.,JYP Entertainment,JYP,KOSPI,Entertainment,Korea,MEDIUM,75000
+097950,CJ제일제당,CJ CheilJedang,CJ제일제당,KOSPI,Food,Korea,MEDIUM,280000
+271560,오리온,Orion,오리온,KOSPI,Food,Korea,MEDIUM,110000
+004370,농심,Nongshim,농심,KOSPI,Food,Korea,MEDIUM,320000
+161390,한국콜마,Kolmar Korea,한국콜마,KOSPI,Apparel,Korea,MEDIUM,45000
+003670,포스코홀딩스,POSCO Holdings,포스코,KOSPI,Energy,Korea,HIGH,320000
+096770,SK이노베이션,SK Innovation,SK이노베이션,KOSPI,Energy,Korea,HIGH,130000
+051910,LG화학,LG Chem,LG화학,KOSPI,Energy,Korea,MEDIUM,350000
+AAPL,Apple Inc.,Apple,Apple,NASDAQ,IT,US,HIGH,175.00
+MSFT,Microsoft Corporation,Microsoft,Microsoft,NASDAQ,IT,US,HIGH,380.00
+GOOGL,Alphabet Inc.,Google,Google,NASDAQ,IT,US,HIGH,140.00
+META,Meta Platforms Inc.,Meta,Meta,NASDAQ,IT,US,HIGH,350.00
+AMZN,Amazon.com Inc.,Amazon,Amazon,NASDAQ,IT,US,HIGH,155.00
+TSLA,Tesla Inc.,Tesla,Tesla,NASDAQ,Auto,US,HIGH,210.00
+NVDA,NVIDIA Corporation,NVIDIA,NVIDIA,NASDAQ,IT,US,HIGH,480.00
+MCD,McDonald's Corporation,McDonald's,McDonald's,NYSE,Food,US,HIGH,290.00
+KO,The Coca-Cola Company,Coca-Cola,Coca-Cola,NYSE,Food,US,HIGH,60.00
+PEP,PepsiCo Inc.,PepsiCo,PepsiCo,NASDAQ,Food,US,HIGH,170.00
+SBUX,Starbucks Corporation,Starbucks,Starbucks,NASDAQ,Food,US,HIGH,95.00
+CMG,Chipotle Mexican Grill,Chipotle,Chipotle,NYSE,Food,US,MEDIUM,2800.00
+NKE,Nike Inc.,Nike,Nike,NYSE,Apparel,US,HIGH,110.00
+LULU,Lululemon Athletica,Lululemon,Lululemon,NASDAQ,Apparel,US,HIGH,390.00
+JPM,JPMorgan Chase & Co.,JPMorgan,JPMorgan,NYSE,Finance,US,HIGH,160.00
+V,Visa Inc.,Visa,Visa,NYSE,Finance,US,HIGH,260.00
+MA,Mastercard Inc.,Mastercard,Mastercard,NYSE,Finance,US,HIGH,420.00
+DIS,The Walt Disney Company,Disney,Disney,NYSE,Entertainment,US,HIGH,95.00
+NFLX,Netflix Inc.,Netflix,Netflix,NASDAQ,Entertainment,US,HIGH,485.00
+SPOT,Spotify Technology,Spotify,Spotify,NYSE,Entertainment,US,MEDIUM,280.00
+XOM,Exxon Mobil Corporation,Exxon,Exxon,NYSE,Energy,US,HIGH,105.00
+CVX,Chevron Corporation,Chevron,Chevron,NYSE,Energy,US,MEDIUM,155.00
+NSRGY,Nestle S.A.,Nestle,Nestle,OTC,Food,Global,HIGH,110.00
+UL,Unilever PLC,Unilever,Unilever,NYSE,Food,Global,HIGH,52.00
+DANOY,Danone S.A.,Danone,Danone,OTC,Food,Global,MEDIUM,11.50
+LVMUY,LVMH,LVMH,LVMH,OTC,Apparel,Global,HIGH,175.00
+ADDYY,Adidas AG,Adidas,Adidas,OTC,Apparel,Global,HIGH,125.00
+TSM,Taiwan Semiconductor,TSMC,TSMC,NYSE,IT,Global,HIGH,145.00
+SONY,Sony Group Corporation,Sony,Sony,NYSE,IT,Global,HIGH,90.00
+ASML,ASML Holding N.V.,ASML,ASML,NASDAQ,IT,Global,HIGH,720.00
+TM,Toyota Motor Corporation,Toyota,Toyota,NYSE,Auto,Global,HIGH,190.00
+BMWYY,Bayerische Motoren Werke,BMW,BMW,OTC,Auto,Global,MEDIUM,32.00
+VWAGY,Volkswagen AG,Volkswagen,Volkswagen,OTC,Auto,Global,MEDIUM,13.50
+SHEL,Shell plc,Shell,Shell,NYSE,Energy,Global,HIGH,68.00
+TTE,TotalEnergies SE,TotalEnergies,TotalEnergies,NYSE,Energy,Global,MEDIUM,62.00
+BABA,Alibaba Group,Alibaba,Alibaba,NYSE,IT,Global,MEDIUM,85.00
+BIDU,Baidu Inc.,Baidu,Baidu,NASDAQ,IT,Global,MEDIUM,95.00

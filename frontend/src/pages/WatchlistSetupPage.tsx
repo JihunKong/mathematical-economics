@@ -291,7 +291,7 @@ const WatchlistSetupPage: React.FC = () => {
 
       if (response.ok) {
         toast.success('관심종목이 저장되었습니다!');
-        toast.info('💡 중요 안내: 관심종목 선정 후 24시간이 지나야 거래가 가능합니다. 이 시간 동안 선택한 종목들을 충분히 조사해보세요!', {
+        toast('💡 중요 안내: 관심종목 선정 후 24시간이 지나야 거래가 가능합니다. 이 시간 동안 선택한 종목들을 충분히 조사해보세요!', {
           duration: 8000,
           icon: '📅'
         });

@@ -1,0 +1,142 @@
+# Docker Compose configuration optimized for t3.small EC2 instance (2GB RAM, 2 vCPU)
+# For 5 concurrent users with 60 curated stocks
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: math-economics-postgres
+    environment:
+      POSTGRES_DB: mathematical_economics
+      POSTGRES_USER: mathuser
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mathpass123}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres.conf:/etc/postgresql/postgresql.conf:ro
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mathuser"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+
+  redis:
+    image: redis:7-alpine
+    container_name: math-economics-redis
+    command: redis-server --maxmemory 64mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 64M
+        reservations:
+          cpus: '0.1'
+          memory: 32M
+
+  backend:
+    image: jihunkong/math-economics-backend:latest
+    container_name: math-economics-backend
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      DATABASE_URL: postgresql://mathuser:${POSTGRES_PASSWORD:-mathpass123}@postgres:5432/mathematical_economics
+      REDIS_URL: redis://redis:6379
+      CORS_ORIGIN: https://경제교실.com,https://xn--289aykm66cwye.com,https://www.경제교실.com,https://www.xn--289aykm66cwye.com
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: 7d
+      ENABLE_STOCK_UPDATER: true
+      STOCK_DATA_CACHE_TTL: 300000
+      HISTORICAL_DATA_CACHE_TTL: 7200000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:5000/health', (res) => process.exit(res.statusCode === 200 ? 0 : 1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - app-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    command: node dist/server.js
+
+  nginx:
+    image: nginx:alpine
+    container_name: math-economics-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.prod.conf:/etc/nginx/nginx.conf:ro
+      - ./frontend/dist:/usr/share/nginx/html:ro
+      - ./certbot/conf:/etc/letsencrypt:ro
+      - ./certbot/www:/var/www/certbot:ro
+      - ./nginx/logs:/var/log/nginx
+    depends_on:
+      - backend
+    networks:
+      - app-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 32M
+        reservations:
+          cpus: '0.1'
+          memory: 16M
+    command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
+
+  certbot:
+    image: certbot/certbot
+    container_name: math-economics-certbot
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.1'
+          memory: 32M
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
