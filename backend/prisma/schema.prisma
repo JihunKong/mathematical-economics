@@ -34,9 +34,11 @@ model User {
   holdings         Holding[]
   notifications    Notification[]
   watchlist        Watchlist[]
-  
+  studentProgress  StudentProgress[]
+
   @@index([email])
   @@index([classId])
+  @@index([classId, role]) // 복합 인덱스: 학급별 역할 조회 최적화
 }
 
 model Class {
@@ -54,7 +56,8 @@ model Class {
   teacher          User           @relation("TeacherClasses", fields: [teacherId], references: [id])
   students         User[]
   allowedStocks    AllowedStock[]
-  
+  studentProgress  StudentProgress[]
+
   @@index([code])
   @@index([teacherId])
 }
@@ -131,10 +134,12 @@ model Transaction {
   // Relations
   user             User           @relation(fields: [userId], references: [id])
   stock            Stock          @relation(fields: [stockId], references: [id])
-  
+  analysis         TransactionAnalysis?
+
   @@index([userId])
   @@index([stockId])
   @@index([createdAt])
+  @@index([userId, createdAt(sort: Desc)]) // 복합 인덱스: 사용자별 최근 거래 조회 최적화
 }
 
 model Holding {
@@ -297,4 +302,68 @@ enum NotificationType {
   PRICE_ALERT
   SYSTEM
   ACHIEVEMENT
+}
+
+// ============================================
+// 교육 기능 강화 모델
+// ============================================
+
+// 거래 근거 분석 모델
+model TransactionAnalysis {
+  id               String         @id @default(cuid())
+  transactionId    String         @unique
+  userId           String
+
+  // 근거 분석
+  reasonLength     Int            @default(0)      // 근거 텍스트 길이
+  hasNewsRef       Boolean        @default(false)  // 뉴스 참조 여부
+  conceptsMentioned String[]                       // 언급된 경제 개념 ["PER", "분산투자", "모멘텀"]
+  qualityScore     Float          @default(0)      // 품질 점수 (1-5)
+
+  // 교사 피드백
+  teacherFeedback  String?                         // 교사 코멘트
+  feedbackDate     DateTime?                       // 피드백 작성일
+
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  // Relations
+  transaction      Transaction    @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([qualityScore])
+}
+
+// 학생 학습 진도 모델
+model StudentProgress {
+  id               String         @id @default(cuid())
+  userId           String
+  classId          String
+
+  // 거래 통계
+  totalTrades      Int            @default(0)      // 총 거래 횟수
+  profitableTrades Int            @default(0)      // 수익 거래 횟수
+  winRate          Float          @default(0)      // 승률 (%)
+  avgReturn        Float          @default(0)      // 평균 수익률 (%)
+
+  // 학습 지표
+  conceptsLearned  String[]                        // 학습한 경제 개념
+  riskLevel        String         @default("unknown") // 위험 선호도: low/medium/high
+  tradingStyle     String?                         // 투자 스타일: value/growth/momentum
+
+  // 진도
+  level            Int            @default(1)      // 레벨 (1-10)
+  experience       Int            @default(0)      // 경험치 포인트
+
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  // Relations
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  class            Class          @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, classId])
+  @@index([userId])
+  @@index([classId])
+  @@index([level])
 }

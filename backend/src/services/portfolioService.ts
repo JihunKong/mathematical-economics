@@ -1,8 +1,31 @@
 import { prisma } from '../config/database';
 import { AppError } from '../middleware/errorHandler';
+import { cacheService } from './cacheService-improved';
+import { logger } from '../utils/logger';
+
+// 캐시 TTL 설정 (초)
+const CACHE_TTL = {
+  PORTFOLIO: 120,   // 2분
+  HOLDINGS: 120,    // 2분
+};
 
 export class PortfolioService {
+  // 캐시 키 생성
+  private getCacheKey(type: 'portfolio' | 'holdings', userId: string): string {
+    return `${type}:${userId}`;
+  }
+
   async getPortfolio(userId: string) {
+    // 캐시 확인
+    const cacheKey = this.getCacheKey('portfolio', userId);
+    const cached = await cacheService.get(cacheKey);
+
+    if (cached) {
+      logger.debug(`Portfolio cache hit: ${userId}`);
+      return cached;
+    }
+
+    logger.debug(`Portfolio cache miss: ${userId}`);
     // Get user data
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -80,7 +103,7 @@ export class PortfolioService {
     const yesterdayValue = totalHoldingsValue - dailyChange;
     const dailyChangePercent = yesterdayValue > 0 ? (dailyChange / yesterdayValue) * 100 : 0;
 
-    return {
+    const result = {
       cash: user.currentCash,
       totalValue: totalPortfolioValue,
       totalInvestedAmount,
@@ -91,6 +114,19 @@ export class PortfolioService {
       holdings: updatedHoldings,
       cashWeight: totalPortfolioValue > 0 ? (user.currentCash / totalPortfolioValue) * 100 : 100,
     };
+
+    // 캐시에 저장
+    await cacheService.set(cacheKey, result, CACHE_TTL.PORTFOLIO);
+    logger.debug(`Portfolio cached: ${userId}`);
+
+    return result;
+  }
+
+  // 포트폴리오 캐시 무효화 (거래 시 호출)
+  async invalidatePortfolio(userId: string): Promise<void> {
+    await cacheService.delete(this.getCacheKey('portfolio', userId));
+    await cacheService.delete(this.getCacheKey('holdings', userId));
+    logger.debug(`Portfolio cache invalidated: ${userId}`);
   }
 
   async getHoldings(userId: string) {

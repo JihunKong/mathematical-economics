@@ -3,6 +3,9 @@ import { AppError } from '../middleware/errorHandler';
 import { TransactionType } from '@prisma/client';
 import { AggregatedStockService } from './aggregatedStockService';
 import { logger } from '../utils/logger';
+import { PortfolioService } from './portfolioService';
+import { LeaderboardService } from './leaderboardService';
+import { tradeAnalysisService } from './tradeAnalysisService';
 
 interface TradeData {
   userId: string;
@@ -14,15 +17,33 @@ interface TradeData {
 
 export class TradingService {
   private aggregatedStockService: AggregatedStockService;
+  private portfolioService: PortfolioService;
+  private leaderboardService: LeaderboardService;
 
   constructor() {
     this.aggregatedStockService = new AggregatedStockService();
+    this.portfolioService = new PortfolioService();
+    this.leaderboardService = new LeaderboardService();
+  }
+
+  // 거래 후 캐시 무효화
+  private async invalidateCaches(userId: string): Promise<void> {
+    try {
+      // 포트폴리오 캐시 무효화
+      await this.portfolioService.invalidatePortfolio(userId);
+      // 리더보드 캐시 무효화 (모든 기간)
+      await this.leaderboardService.invalidateLeaderboard();
+      logger.debug(`Caches invalidated for user: ${userId}`);
+    } catch (error) {
+      logger.error('Cache invalidation failed:', error);
+      // 캐시 무효화 실패해도 거래는 계속 진행
+    }
   }
   async executeBuy(data: TradeData) {
     const { userId, symbol, quantity, reason } = data;
 
     // Start transaction
-    return await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx) => {
       // Get user and stock
       const [user, stock] = await Promise.all([
         tx.user.findUnique({ 
@@ -151,12 +172,26 @@ export class TradingService {
         currentCash: user.currentCash - totalAmount,
       };
     });
+
+    // 거래 완료 후 캐시 무효화 (트랜잭션 외부에서 실행)
+    await this.invalidateCaches(userId);
+
+    // 거래 근거 분석 저장 (비동기로 실행, 실패해도 거래는 유효)
+    if (data.reason) {
+      tradeAnalysisService.saveTransactionAnalysis(
+        result.transaction.id,
+        userId,
+        data.reason
+      ).catch(err => logger.error('Trade analysis save failed:', err));
+    }
+
+    return result;
   }
 
   async executeSell(data: TradeData) {
     const { userId, symbol, quantity, reason } = data;
 
-    return await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx) => {
       // Get user, stock, and holding
       const [user, stock] = await Promise.all([
         tx.user.findUnique({ 
@@ -274,6 +309,20 @@ export class TradingService {
         profitLoss: (stock.currentPrice - holding.averagePrice) * quantity,
       };
     });
+
+    // 거래 완료 후 캐시 무효화 (트랜잭션 외부에서 실행)
+    await this.invalidateCaches(userId);
+
+    // 거래 근거 분석 저장 (비동기로 실행, 실패해도 거래는 유효)
+    if (data.reason) {
+      tradeAnalysisService.saveTransactionAnalysis(
+        result.transaction.id,
+        userId,
+        data.reason
+      ).catch(err => logger.error('Trade analysis save failed:', err));
+    }
+
+    return result;
   }
 
   async getTransactionHistory(userId: string, limit = 50) {

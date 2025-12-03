@@ -7,8 +7,9 @@ import api from '@/services/api';
 import stockService, { StockPrice } from '@/services/stockService';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 import toast from 'react-hot-toast';
-import { Search, TrendingUp, TrendingDown, Info, RefreshCw, Activity } from 'lucide-react';
+import { Search, TrendingUp, TrendingDown, Info, RefreshCw, Activity, X, Tag, AlertCircle } from 'lucide-react';
 import clsx from 'clsx';
+import { ECONOMIC_CONCEPTS, CONCEPT_CATEGORIES, EconomicConcept } from '@/data/economicConcepts';
 
 interface Stock {
   id: string;
@@ -51,6 +52,11 @@ export default function TradingPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [selectedMarket, setSelectedMarket] = useState<'all' | 'KOSPI' | 'KOSDAQ'>('all');
+  const [selectedConcepts, setSelectedConcepts] = useState<string[]>([]);
+  const [showConceptSelector, setShowConceptSelector] = useState(false);
+
+  // 최소 근거 길이 상수
+  const MIN_REASON_LENGTH = 20;
 
   // Filtered stocks based on search and market
   const filteredStocks = useMemo(() => {
@@ -139,6 +145,11 @@ export default function TradingPage() {
       return;
     }
 
+    if (reason.trim().length < MIN_REASON_LENGTH) {
+      toast.error(`투자 판단 근거를 최소 ${MIN_REASON_LENGTH}자 이상 작성해주세요 (현재 ${reason.trim().length}자)`);
+      return;
+    }
+
     const currentPrice = realtimePrices.get(selectedStock.symbol)?.currentPrice || selectedStock.currentPrice;
     if (!currentPrice || currentPrice === 0) {
       toast.error('현재 가격 정보를 불러올 수 없습니다. 잠시 후 다시 시도해주세요.');
@@ -162,7 +173,9 @@ export default function TradingPage() {
         body: JSON.stringify({
           symbol: selectedStock.symbol,
           quantity: qty,
-          reason: reason
+          reason: selectedConcepts.length > 0
+            ? `[${selectedConcepts.join(', ')}] ${reason}`
+            : reason
         })
       });
       
@@ -198,6 +211,7 @@ export default function TradingPage() {
       setShowTradeModal(false);
       setQuantity('');
       setReason('');
+      setSelectedConcepts([]);
       fetchData();
     } catch (error: any) {
       console.error('Trade failed:', error);
@@ -429,8 +443,8 @@ export default function TradingPage() {
         </div>
       </div>
 
-      {/* Stock List */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      {/* Stock List - Desktop Table View */}
+      <div className="hidden md:block bg-white rounded-lg shadow overflow-hidden">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
@@ -480,10 +494,10 @@ export default function TradingPage() {
                             <div className="font-medium">{formatCurrency(displayPrice)}</div>
                             {realtimePrice && realtimePrice.timestamp && (
                               <div className="text-xs text-gray-500">
-                                {new Date(realtimePrice.timestamp).toLocaleTimeString('ko-KR', { 
-                                  hour: '2-digit', 
-                                  minute: '2-digit', 
-                                  second: '2-digit' 
+                                {new Date(realtimePrice.timestamp).toLocaleTimeString('ko-KR', {
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                  second: '2-digit'
                                 })}
                               </div>
                             )}
@@ -500,7 +514,7 @@ export default function TradingPage() {
                     const realtimePrice = realtimePrices.get(stock.symbol);
                     const changePercent = realtimePrice?.changePercent ?? stock.changePercent;
                     const changeAmount = realtimePrice?.changeAmount ?? stock.change;
-                    
+
                     return (
                       <div className={clsx(
                         'flex items-center text-sm font-medium',
@@ -576,26 +590,162 @@ export default function TradingPage() {
         </table>
       </div>
 
-      {/* Trade Modal */}
+      {/* Stock List - Mobile Card View */}
+      <div className="md:hidden space-y-3">
+        {filteredStocks.map((stock) => {
+          const realtimePrice = realtimePrices.get(stock.symbol);
+          const displayPrice = realtimePrice?.currentPrice || stock.currentPrice;
+          const changePercent = realtimePrice?.changePercent ?? stock.changePercent;
+          const changeAmount = realtimePrice?.changeAmount ?? stock.change;
+          const holdingQty = getHoldingQuantity(stock.symbol);
+
+          return (
+            <div key={stock.id} className="bg-white rounded-lg shadow p-4">
+              {/* 종목 정보 헤더 */}
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-gray-900">{stock.name}</span>
+                    <Link
+                      to={`/stock/${stock.symbol}`}
+                      className="text-gray-400 hover:text-gray-600"
+                    >
+                      <Info className="w-4 h-4" />
+                    </Link>
+                  </div>
+                  <span className="text-sm text-gray-500">{stock.symbol}</span>
+                </div>
+                {/* 변동률 */}
+                <div className={clsx(
+                  'flex items-center text-sm font-medium',
+                  changePercent >= 0 ? 'text-red-600' : 'text-blue-600'
+                )}>
+                  {changePercent >= 0 ? (
+                    <TrendingUp className="w-4 h-4 mr-1" />
+                  ) : (
+                    <TrendingDown className="w-4 h-4 mr-1" />
+                  )}
+                  <span>{changePercent >= 0 ? '+' : ''}{changePercent.toFixed(2)}%</span>
+                </div>
+              </div>
+
+              {/* 가격 & 보유 정보 */}
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <p className="text-xs text-gray-500">현재가</p>
+                  {displayPrice && displayPrice > 0 ? (
+                    <p className="text-lg font-semibold">{formatCurrency(displayPrice)}</p>
+                  ) : (
+                    <p className="text-gray-400 italic text-sm">가격 정보 없음</p>
+                  )}
+                  {changeAmount !== 0 && (
+                    <p className={clsx(
+                      'text-xs',
+                      changeAmount >= 0 ? 'text-red-500' : 'text-blue-500'
+                    )}>
+                      {changeAmount >= 0 ? '+' : ''}{changeAmount.toLocaleString()}원
+                    </p>
+                  )}
+                </div>
+                {holdingQty > 0 && (
+                  <div className="text-right">
+                    <p className="text-xs text-gray-500">보유</p>
+                    <p className="text-lg font-semibold text-primary-600">{holdingQty}주</p>
+                  </div>
+                )}
+              </div>
+
+              {/* 거래 버튼 */}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    if (!displayPrice || displayPrice === 0) {
+                      toast.error('현재 가격 정보가 없습니다.');
+                      return;
+                    }
+                    setSelectedStock({ ...stock, currentPrice: displayPrice });
+                    setTradeMode('buy');
+                    setShowTradeModal(true);
+                  }}
+                  disabled={!displayPrice || displayPrice === 0}
+                  className={clsx(
+                    'flex-1 py-2.5 rounded-lg font-medium text-sm transition-colors',
+                    displayPrice && displayPrice > 0
+                      ? 'bg-red-50 text-red-600 hover:bg-red-100 active:bg-red-200'
+                      : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  )}
+                >
+                  매수
+                </button>
+                <button
+                  onClick={() => {
+                    if (!displayPrice || displayPrice === 0) {
+                      toast.error('현재 가격 정보가 없습니다.');
+                      return;
+                    }
+                    setSelectedStock({ ...stock, currentPrice: displayPrice });
+                    setTradeMode('sell');
+                    setShowTradeModal(true);
+                  }}
+                  disabled={!displayPrice || displayPrice === 0 || holdingQty === 0}
+                  className={clsx(
+                    'flex-1 py-2.5 rounded-lg font-medium text-sm transition-colors',
+                    displayPrice && displayPrice > 0 && holdingQty > 0
+                      ? 'bg-blue-50 text-blue-600 hover:bg-blue-100 active:bg-blue-200'
+                      : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  )}
+                >
+                  매도 {holdingQty > 0 && `(${holdingQty}주)`}
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Trade Modal - Mobile Optimized */}
       {showTradeModal && selectedStock && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">
-              {selectedStock.name} {tradeMode === 'buy' ? '매수' : '매도'}
-            </h2>
-            
-            <div className="mb-4">
-              <p className="text-sm text-gray-600">현재가</p>
-              <p className="text-lg font-semibold">{formatCurrency(realtimePrices.get(selectedStock.symbol)?.currentPrice || selectedStock.currentPrice)}</p>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end sm:items-center justify-center z-50">
+          <div className="bg-white rounded-t-2xl sm:rounded-lg p-4 sm:p-6 w-full sm:max-w-md max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg sm:text-xl font-bold">
+                {selectedStock.name} {tradeMode === 'buy' ? '매수' : '매도'}
+              </h2>
+              <button
+                onClick={() => {
+                  setShowTradeModal(false);
+                  setQuantity('');
+                  setReason('');
+                  setSelectedConcepts([]);
+                }}
+                className="p-1 rounded-full hover:bg-gray-100"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
             </div>
 
-            {tradeMode === 'sell' && (
-              <div className="mb-4">
-                <p className="text-sm text-gray-600">보유 수량</p>
-                <p className="text-lg font-semibold">{getHoldingQuantity(selectedStock.symbol)}주</p>
+            {/* 현재가 & 보유수량 - 가로 배치 */}
+            <div className="flex gap-4 mb-4">
+              <div className="flex-1 bg-gray-50 rounded-lg p-3">
+                <p className="text-xs text-gray-500">현재가</p>
+                <p className="text-base sm:text-lg font-semibold">{formatCurrency(realtimePrices.get(selectedStock.symbol)?.currentPrice || selectedStock.currentPrice)}</p>
               </div>
-            )}
+              {tradeMode === 'sell' && (
+                <div className="flex-1 bg-gray-50 rounded-lg p-3">
+                  <p className="text-xs text-gray-500">보유 수량</p>
+                  <p className="text-base sm:text-lg font-semibold">{getHoldingQuantity(selectedStock.symbol)}주</p>
+                </div>
+              )}
+              {tradeMode === 'buy' && (
+                <div className="flex-1 bg-gray-50 rounded-lg p-3">
+                  <p className="text-xs text-gray-500">보유 현금</p>
+                  <p className="text-base sm:text-lg font-semibold">{formatCurrency(currentCash)}</p>
+                </div>
+              )}
+            </div>
 
+            {/* 수량 입력 */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 수량
@@ -604,47 +754,152 @@ export default function TradingPage() {
                 type="number"
                 value={quantity}
                 onChange={(e) => setQuantity(e.target.value)}
-                className="input w-full"
+                className="input w-full text-lg"
                 placeholder="0"
                 min="1"
                 max={tradeMode === 'sell' ? getHoldingQuantity(selectedStock.symbol) : undefined}
               />
               {quantity && parseInt(quantity) > 0 && (
                 <p className="text-sm text-gray-600 mt-1">
-                  예상 {tradeMode === 'buy' ? '매수' : '매도'} 금액: {formatCurrency((realtimePrices.get(selectedStock.symbol)?.currentPrice || selectedStock.currentPrice) * parseInt(quantity))}
+                  예상 {tradeMode === 'buy' ? '매수' : '매도'} 금액: <span className="font-semibold">{formatCurrency((realtimePrices.get(selectedStock.symbol)?.currentPrice || selectedStock.currentPrice) * parseInt(quantity))}</span>
                 </p>
               )}
             </div>
 
+            {/* 경제 개념 태그 선택 */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <Tag className="w-4 h-4 inline mr-1" />
+                투자 근거 개념 (선택)
+              </label>
+
+              {/* 선택된 태그 표시 */}
+              {selectedConcepts.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mb-2">
+                  {selectedConcepts.map(conceptId => {
+                    const concept = ECONOMIC_CONCEPTS.find(c => c.id === conceptId);
+                    return concept ? (
+                      <span
+                        key={conceptId}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 bg-primary-100 text-primary-700 rounded-full text-xs"
+                      >
+                        {concept.name}
+                        <button
+                          onClick={() => setSelectedConcepts(prev => prev.filter(id => id !== conceptId))}
+                          className="hover:text-primary-900"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </span>
+                    ) : null;
+                  })}
+                </div>
+              )}
+
+              {/* 개념 선택 버튼/패널 */}
+              <button
+                onClick={() => setShowConceptSelector(!showConceptSelector)}
+                className="text-sm text-primary-600 hover:text-primary-800 flex items-center gap-1"
+              >
+                {showConceptSelector ? '접기' : '+ 개념 태그 추가'}
+              </button>
+
+              {showConceptSelector && (
+                <div className="mt-2 p-3 bg-gray-50 rounded-lg max-h-40 overflow-y-auto">
+                  {Object.entries(CONCEPT_CATEGORIES).map(([categoryKey, categoryInfo]) => (
+                    <div key={categoryKey} className="mb-2 last:mb-0">
+                      <p className="text-xs font-medium text-gray-500 mb-1">{categoryInfo.name}</p>
+                      <div className="flex flex-wrap gap-1">
+                        {ECONOMIC_CONCEPTS
+                          .filter(c => c.category === categoryKey)
+                          .map(concept => (
+                            <button
+                              key={concept.id}
+                              onClick={() => {
+                                if (selectedConcepts.includes(concept.id)) {
+                                  setSelectedConcepts(prev => prev.filter(id => id !== concept.id));
+                                } else {
+                                  setSelectedConcepts(prev => [...prev, concept.id]);
+                                }
+                              }}
+                              className={clsx(
+                                'px-2 py-0.5 rounded-full text-xs transition-colors',
+                                selectedConcepts.includes(concept.id)
+                                  ? 'bg-primary-600 text-white'
+                                  : 'bg-white border border-gray-300 text-gray-700 hover:border-primary-400'
+                              )}
+                              title={concept.description}
+                            >
+                              {concept.name}
+                            </button>
+                          ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* 투자 판단 근거 */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 투자 판단 근거 <span className="text-red-500">*</span>
+                <span className="text-xs text-gray-500 ml-2">
+                  (최소 {MIN_REASON_LENGTH}자)
+                </span>
               </label>
               <textarea
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
-                className="input w-full h-24"
-                placeholder="투자 결정의 이유를 작성해주세요..."
+                className={clsx(
+                  'input w-full h-24 resize-none',
+                  reason.length > 0 && reason.length < MIN_REASON_LENGTH && 'border-orange-400 focus:border-orange-500 focus:ring-orange-500'
+                )}
+                placeholder="이 종목을 매수/매도하려는 이유를 구체적으로 작성해주세요..."
                 required
               />
+              <div className="flex justify-between items-center mt-1">
+                <div className="flex items-center gap-1 text-xs">
+                  {reason.length < MIN_REASON_LENGTH ? (
+                    <>
+                      <AlertCircle className="w-3 h-3 text-orange-500" />
+                      <span className="text-orange-500">
+                        {MIN_REASON_LENGTH - reason.length}자 더 입력해주세요
+                      </span>
+                    </>
+                  ) : (
+                    <span className="text-green-600">✓ 충분한 근거 작성됨</span>
+                  )}
+                </div>
+                <span className={clsx(
+                  'text-xs',
+                  reason.length >= MIN_REASON_LENGTH ? 'text-green-600' : 'text-gray-400'
+                )}>
+                  {reason.length}/{MIN_REASON_LENGTH}자 이상
+                </span>
+              </div>
             </div>
 
-            <div className="flex gap-3">
+            {/* 거래 버튼 */}
+            <div className="flex gap-3 pt-2">
               <button
                 onClick={() => {
                   setShowTradeModal(false);
                   setQuantity('');
                   setReason('');
+                  setSelectedConcepts([]);
                 }}
-                className="btn btn-secondary flex-1"
+                className="btn btn-secondary flex-1 py-3"
               >
                 취소
               </button>
               <button
                 onClick={handleTrade}
+                disabled={reason.length < MIN_REASON_LENGTH || !quantity || parseInt(quantity) <= 0}
                 className={clsx(
-                  'btn flex-1',
-                  tradeMode === 'buy' ? 'btn-primary bg-red-600 hover:bg-red-700' : 'btn-primary'
+                  'btn flex-1 py-3',
+                  tradeMode === 'buy' ? 'btn-primary bg-red-600 hover:bg-red-700 disabled:bg-red-300' : 'btn-primary disabled:bg-blue-300',
+                  (reason.length < MIN_REASON_LENGTH || !quantity || parseInt(quantity) <= 0) && 'opacity-50 cursor-not-allowed'
                 )}
               >
                 {tradeMode === 'buy' ? '매수' : '매도'}
