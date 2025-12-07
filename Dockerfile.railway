@@ -1,0 +1,76 @@
+# Railway combined build - Frontend + Backend
+# Updated: 2025-12-07
+# Stage 1: Build Frontend
+FROM node:20-alpine AS frontend-builder
+
+WORKDIR /frontend
+
+# Copy frontend files
+COPY frontend/package*.json ./
+RUN npm install --legacy-peer-deps
+
+COPY frontend/ .
+
+# Build frontend with production API URL
+ENV VITE_API_URL=
+RUN npm run build
+
+# Stage 2: Build Backend
+FROM node:20-alpine AS backend-builder
+
+WORKDIR /app
+
+# Install dependencies for Prisma
+RUN apk add --no-cache openssl libc6-compat
+
+# Copy backend package files
+COPY backend/package*.json ./
+RUN npm install --legacy-peer-deps
+
+# Copy backend source
+COPY backend/ .
+
+# Generate Prisma client
+RUN npx prisma generate --schema=./prisma/schema.prisma
+
+# Build backend
+RUN npm run build
+
+# Remove dev dependencies
+RUN npm prune --omit=dev
+
+# Regenerate Prisma client for production
+RUN npx prisma generate
+
+# Stage 3: Production
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Install dependencies for Prisma
+RUN apk add --no-cache openssl libc6-compat
+
+# Copy backend build and dependencies
+COPY --from=backend-builder /app/dist ./dist
+COPY --from=backend-builder /app/node_modules ./node_modules
+COPY --from=backend-builder /app/prisma ./prisma
+COPY --from=backend-builder /app/package.json ./
+
+# Copy frontend build to public folder
+COPY --from=frontend-builder /frontend/dist ./public
+
+# Create logs directory and non-root user
+RUN mkdir -p /app/logs && \
+    addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001 && \
+    chown -R nodejs:nodejs /app
+
+USER nodejs
+
+EXPOSE 5000
+
+ENV NODE_ENV=production
+ENV SERVE_STATIC=true
+
+# Sync database schema and start server
+CMD ["sh", "-c", "npx prisma db push --schema=./prisma/schema.prisma --accept-data-loss && node dist/server.js"]

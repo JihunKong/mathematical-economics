@@ -5,6 +5,7 @@ import morgan from 'morgan';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import dotenv from 'dotenv';
+import path from 'path';
 
 import { errorHandler } from './middleware/errorHandler';
 import { rateLimiter } from './middleware/rateLimiter';
@@ -98,6 +99,22 @@ export const createApp = (): { app: Application; io: Server; httpServer: any } =
 
   // API routes
   app.use('/api', routes);
+
+  // Serve static files for frontend (when SERVE_STATIC is enabled)
+  if (process.env.SERVE_STATIC === 'true') {
+    const publicPath = path.join(__dirname, '..', 'public');
+    app.use(express.static(publicPath));
+
+    // SPA fallback - serve index.html for all non-API routes
+    app.get('*', (req, res, next) => {
+      if (req.path.startsWith('/api') || req.path === '/health') {
+        return next();
+      }
+      res.sendFile(path.join(publicPath, 'index.html'));
+    });
+
+    logger.info(`Serving static files from: ${publicPath}`);
+  }
 
   // Error handling
   app.use(errorHandler);
