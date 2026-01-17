@@ -20,10 +20,21 @@ import {
   CheckCircle,
   X,
   ArrowRight,
-  Shuffle
+  Shuffle,
+  Filter,
+  Award
 } from 'lucide-react';
 import { useAppSelector } from '../hooks/useRedux';
 import toast from 'react-hot-toast';
+import {
+  CURRICULUM_SUBJECTS,
+  CONCEPT_CURRICULUM_MAP,
+  ACHIEVEMENT_STANDARDS,
+  getSubjectsByTerm,
+  getStandardsByTerm,
+  getMathFormulaByTerm,
+  SubjectCode
+} from '../data/curriculumData';
 
 interface Concept {
   term: string;
@@ -414,9 +425,11 @@ export default function ConceptsPage() {
   const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>('all');
+  const [selectedSubject, setSelectedSubject] = useState<string>('all');
   const [expandedConcept, setExpandedConcept] = useState<string | null>(initialSearch || null);
   const [bookmarks, setBookmarks] = useState<string[]>([]);
   const [showBookmarksOnly, setShowBookmarksOnly] = useState(false);
+  const [viewMode, setViewMode] = useState<'category' | 'subject'>('category');
   const [quizMode, setQuizMode] = useState<{
     concept: string;
     selectedAnswer: number | null;
@@ -452,9 +465,17 @@ export default function ConceptsPage() {
       const matchesCategory = selectedCategory === 'all' || concept.category === selectedCategory;
       const matchesDifficulty = selectedDifficulty === 'all' || concept.difficulty === selectedDifficulty;
       const matchesBookmark = !showBookmarksOnly || bookmarks.includes(concept.term);
-      return matchesSearch && matchesCategory && matchesDifficulty && matchesBookmark;
+
+      // Filter by curriculum subject
+      let matchesSubject = true;
+      if (selectedSubject !== 'all') {
+        const linkedSubjects = getSubjectsByTerm(concept.term);
+        matchesSubject = linkedSubjects.includes(selectedSubject as SubjectCode);
+      }
+
+      return matchesSearch && matchesCategory && matchesDifficulty && matchesBookmark && matchesSubject;
     });
-  }, [searchQuery, selectedCategory, selectedDifficulty, showBookmarksOnly, bookmarks]);
+  }, [searchQuery, selectedCategory, selectedDifficulty, showBookmarksOnly, bookmarks, selectedSubject]);
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
@@ -563,26 +584,86 @@ export default function ConceptsPage() {
           )}
         </div>
 
+        {/* View Mode Toggle */}
+        <div className="flex items-center gap-2 mb-4">
+          <span className="text-sm text-gray-500">보기:</span>
+          <button
+            onClick={() => { setViewMode('category'); setSelectedSubject('all'); }}
+            className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
+              viewMode === 'category'
+                ? 'bg-indigo-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            카테고리별
+          </button>
+          <button
+            onClick={() => { setViewMode('subject'); setSelectedCategory('all'); }}
+            className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
+              viewMode === 'subject'
+                ? 'bg-indigo-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            교과별
+          </button>
+        </div>
+
         {/* Filters */}
         <div className="flex flex-wrap items-center gap-2 mb-4">
-          {/* Categories */}
-          {categories.map((category) => {
-            const Icon = category.icon;
-            return (
+          {viewMode === 'category' ? (
+            /* Categories */
+            <>
+              {categories.map((category) => {
+                const Icon = category.icon;
+                return (
+                  <button
+                    key={category.id}
+                    onClick={() => setSelectedCategory(category.id)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                      selectedCategory === category.id
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    {category.name}
+                  </button>
+                );
+              })}
+            </>
+          ) : (
+            /* Curriculum Subjects */
+            <>
               <button
-                key={category.id}
-                onClick={() => setSelectedCategory(category.id)}
+                onClick={() => setSelectedSubject('all')}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-colors ${
-                  selectedCategory === category.id
-                    ? 'bg-blue-600 text-white'
+                  selectedSubject === 'all'
+                    ? 'bg-gray-800 text-white'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
-                <Icon className="w-4 h-4" />
-                {category.name}
+                <BookOpen className="w-4 h-4" />
+                전체 교과
               </button>
-            );
-          })}
+              {Object.values(CURRICULUM_SUBJECTS).map((subject) => (
+                <button
+                  key={subject.code}
+                  onClick={() => setSelectedSubject(subject.code)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                    selectedSubject === subject.code
+                      ? `${subject.bgColor} border-2 ${subject.borderColor}`
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                  style={selectedSubject === subject.code ? { color: subject.color } : {}}
+                >
+                  <Award className="w-4 h-4" />
+                  {subject.name}
+                  <span className="text-xs opacity-70">({subject.grade})</span>
+                </button>
+              ))}
+            </>
+          )}
         </div>
 
         {/* Secondary Filters */}
@@ -654,13 +735,26 @@ export default function ConceptsPage() {
                     {categoryInfo && <categoryInfo.icon className="w-5 h-5" />}
                   </div>
                   <div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="font-semibold text-gray-900">{concept.term}</h3>
                       {concept.quiz && (
                         <span className="px-1.5 py-0.5 bg-purple-100 text-purple-700 text-xs rounded">
                           퀴즈
                         </span>
                       )}
+                      {/* Subject badges */}
+                      {getSubjectsByTerm(concept.term).slice(0, 2).map((subjectCode) => {
+                        const subject = CURRICULUM_SUBJECTS[subjectCode];
+                        return (
+                          <span
+                            key={subjectCode}
+                            className={`px-1.5 py-0.5 text-xs rounded ${subject.bgColor}`}
+                            style={{ color: subject.color }}
+                          >
+                            {subject.name}
+                          </span>
+                        );
+                      })}
                     </div>
                     <p className="text-sm text-gray-500 line-clamp-1">{concept.definition}</p>
                   </div>
@@ -705,8 +799,73 @@ export default function ConceptsPage() {
                       <p className="text-gray-800 leading-relaxed">{concept.definition}</p>
                     </div>
 
+                    {/* Curriculum Connection */}
+                    {(() => {
+                      const linkedSubjects = getSubjectsByTerm(concept.term);
+                      const linkedStandards = getStandardsByTerm(concept.term);
+                      const mathFormula = getMathFormulaByTerm(concept.term);
+
+                      if (linkedSubjects.length > 0) {
+                        return (
+                          <div className="p-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg border border-indigo-100">
+                            <h4 className="text-sm font-semibold text-indigo-800 mb-3 flex items-center gap-2">
+                              <GraduationCap className="w-4 h-4" />
+                              2022 개정 교육과정 연계
+                            </h4>
+
+                            {/* Linked Subjects */}
+                            <div className="mb-3">
+                              <p className="text-xs text-gray-600 mb-2">연계 교과</p>
+                              <div className="flex flex-wrap gap-2">
+                                {linkedSubjects.map((subjectCode) => {
+                                  const subject = CURRICULUM_SUBJECTS[subjectCode];
+                                  return (
+                                    <span
+                                      key={subjectCode}
+                                      className={`px-2.5 py-1 text-xs font-medium rounded-full ${subject.bgColor} border ${subject.borderColor}`}
+                                      style={{ color: subject.color }}
+                                    >
+                                      {subject.name} ({subject.grade})
+                                    </span>
+                                  );
+                                })}
+                              </div>
+                            </div>
+
+                            {/* Achievement Standards */}
+                            {linkedStandards.length > 0 && (
+                              <div className="mb-3">
+                                <p className="text-xs text-gray-600 mb-2">관련 성취기준</p>
+                                <ul className="space-y-1">
+                                  {linkedStandards.map((standard) => (
+                                    <li key={standard.code} className="text-sm text-indigo-700 flex items-start gap-2">
+                                      <span className="font-mono text-xs bg-white px-1.5 py-0.5 rounded border border-indigo-200 flex-shrink-0">
+                                        {standard.code}
+                                      </span>
+                                      <span>{standard.description}</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+
+                            {/* Math Formula from Curriculum */}
+                            {mathFormula && (
+                              <div className="mt-3 p-3 bg-white rounded-lg border border-indigo-200">
+                                <p className="text-xs text-gray-600 mb-1">수학적 표현</p>
+                                <p className="font-mono text-sm text-indigo-900 font-bold">{mathFormula.formula}</p>
+                                <p className="text-xs text-gray-500 mt-1">변수: {mathFormula.variables}</p>
+                                <p className="text-xs text-indigo-600 mt-1">예) {mathFormula.example}</p>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
+
                     {/* Formula */}
-                    {concept.formula && (
+                    {concept.formula && !(getMathFormulaByTerm(concept.term)) && (
                       <div className="p-4 bg-indigo-50 rounded-lg border border-indigo-100">
                         <h4 className="text-sm font-semibold text-indigo-800 mb-2 flex items-center gap-2">
                           <Calculator className="w-4 h-4" />
@@ -877,7 +1036,9 @@ export default function ConceptsPage() {
               setSearchQuery('');
               setSelectedCategory('all');
               setSelectedDifficulty('all');
+              setSelectedSubject('all');
               setShowBookmarksOnly(false);
+              setViewMode('category');
               setSearchParams({});
             }}
             className="text-blue-600 hover:underline"

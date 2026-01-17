@@ -29,9 +29,11 @@ import {
   DollarSign,
   Calculator,
   LineChart,
-  MessageSquare
+  MessageSquare,
+  ClipboardList
 } from 'lucide-react';
 import { useAppSelector } from '../hooks/useRedux';
+import { CURRICULUM_SUBJECTS, SubjectCode } from '../data/curriculumData';
 
 interface OnboardingStep {
   id: string;
@@ -394,6 +396,50 @@ export default function StudentGuidePage() {
                 </li>
               ))}
             </ul>
+          </div>
+
+          {/* Curriculum Connection - 2022 개정 교육과정 */}
+          <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-6 border border-indigo-100">
+            <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <GraduationCap className="w-5 h-5 text-indigo-600" />
+              이 앱에서 배우는 교과 (2022 개정 교육과정)
+            </h3>
+            <p className="text-gray-600 mb-4">
+              경제수학 모의투자 앱은 6개 교과의 학습 내용과 연계되어 있습니다.
+            </p>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
+              {Object.values(CURRICULUM_SUBJECTS).map((subject) => (
+                <div
+                  key={subject.code}
+                  className={`p-3 rounded-lg border-2 ${subject.bgColor} hover:shadow-md transition-shadow cursor-pointer`}
+                  style={{ borderColor: subject.color }}
+                >
+                  <p className="font-semibold text-sm" style={{ color: subject.color }}>
+                    {subject.name}
+                  </p>
+                  <p className="text-xs text-gray-500">{subject.grade}</p>
+                  <p className="text-xs text-gray-600 mt-1 line-clamp-2">
+                    {subject.description}
+                  </p>
+                </div>
+              ))}
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <Link
+                to="/learning"
+                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+              >
+                <BookOpen className="w-4 h-4" />
+                학습 모듈에서 교과 연계 확인
+              </Link>
+              <Link
+                to="/activities"
+                className="flex items-center gap-2 px-4 py-2 bg-white border border-indigo-200 text-indigo-700 rounded-lg hover:bg-indigo-50 transition-colors"
+              >
+                <ClipboardList className="w-4 h-4" />
+                교과 연계 활동 보기
+              </Link>
+            </div>
           </div>
         </div>
       )}

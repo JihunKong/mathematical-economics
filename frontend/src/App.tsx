@@ -29,6 +29,7 @@ import LearningModulePage from './pages/LearningModulePage';
 import ConceptsPage from './pages/ConceptsPage';
 import ReflectionPage from './pages/ReflectionPage';
 import StudentGuidePage from './pages/StudentGuidePage';
+import ActivityGuidePage from './pages/ActivityGuidePage';
 
 // Protected Route Component
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -230,6 +231,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <StudentGuidePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="activities"
+            element={
+              <ProtectedRoute>
+                <ActivityGuidePage />
               </ProtectedRoute>
             }
           />

@@ -336,17 +336,88 @@ const lessons: LessonContent[] = [
   }
 ];
 
+// 2022 개정 교육과정 연계 정보 (6개 교과 확장)
 const curriculumInfo = {
-  subject: '고등학교 경제 / 통합사회',
-  unit: '시장과 경제활동 / 합리적 선택',
-  achievement: [
-    '[12경제02-01] 시장 경제에서 가격이 결정되는 원리를 이해한다.',
-    '[12경제02-03] 자산 관리의 원칙을 알고 이를 생애 주기에 적용한다.',
-    '[10통사06-02] 합리적 선택의 의미와 한계를 파악한다.'
+  subjects: [
+    {
+      code: 'ECON_MATH',
+      name: '경제수학',
+      grade: '고2-3',
+      color: '#3B82F6',
+      bgColor: 'bg-blue-100',
+      standards: [
+        { code: '12경수01-02', description: '경제 현상을 수학적으로 모델링하고 해석한다' },
+        { code: '12경수02-01', description: '복리 계산과 현재가치를 이해하고 활용한다' },
+        { code: '12경수02-02', description: '투자 수익률을 계산하고 비교 분석한다' },
+        { code: '12경수03-02', description: '확률 개념을 활용하여 경제적 위험을 평가한다' }
+      ]
+    },
+    {
+      code: 'BASIC_MATH',
+      name: '기초수학',
+      grade: '고1',
+      color: '#10B981',
+      bgColor: 'bg-emerald-100',
+      standards: [
+        { code: '기수01-03', description: '비율과 백분율을 실생활에 적용한다' },
+        { code: '기수02-01', description: '단순 이자와 복리를 계산한다' },
+        { code: '기수02-02', description: '백분율 증가와 감소를 계산한다' }
+      ]
+    },
+    {
+      code: 'COMMON_SOC1',
+      name: '공통사회1',
+      grade: '고1',
+      color: '#F59E0B',
+      bgColor: 'bg-amber-100',
+      standards: [
+        { code: '10공사1-02', description: '경제생활과 합리적 선택을 이해한다' },
+        { code: '10공사1-03', description: '시장경제의 원리를 설명한다' },
+        { code: '10공사1-04', description: '금융의 역할과 합리적 금융생활을 이해한다' }
+      ]
+    },
+    {
+      code: 'COMMON_SOC2',
+      name: '공통사회2',
+      grade: '고1',
+      color: '#EF4444',
+      bgColor: 'bg-red-100',
+      standards: [
+        { code: '10공사2-04', description: '글로벌 경제의 특징과 영향을 분석한다' },
+        { code: '10공사2-05', description: '국제 무역과 환율의 영향을 이해한다' }
+      ]
+    },
+    {
+      code: 'ECONOMICS',
+      name: '경제',
+      grade: '고2-3',
+      color: '#8B5CF6',
+      bgColor: 'bg-violet-100',
+      standards: [
+        { code: '12경제02-01', description: '시장 경제에서 가격이 결정되는 원리를 이해한다' },
+        { code: '12경제02-03', description: '자산 관리의 원칙을 알고 이를 생애 주기에 적용한다' },
+        { code: '12경제03-01', description: '금융 상품의 특성과 위험을 이해한다' }
+      ]
+    },
+    {
+      code: 'INTEGRATED_SOC',
+      name: '통합사회',
+      grade: '고1',
+      color: '#EC4899',
+      bgColor: 'bg-pink-100',
+      standards: [
+        { code: '10통사06-01', description: '시장경제의 기본 원리를 이해한다' },
+        { code: '10통사06-02', description: '합리적 선택의 의미와 한계를 파악한다' },
+        { code: '10통사06-03', description: '금융 생활의 중요성과 신용 관리를 이해한다' }
+      ]
+    }
   ],
   competencies: [
-    '경제적 사고력', '정보 활용 능력', '합리적 의사결정 능력', '비판적 사고력'
-  ]
+    '경제적 사고력', '정보 활용 능력', '합리적 의사결정 능력', '비판적 사고력', '수리 문해력', '데이터 분석력'
+  ],
+  // Legacy fields for compatibility
+  subject: '경제수학 / 기초수학 / 공통사회 / 경제 / 통합사회',
+  unit: '경제 모델링 / 금융 수학 / 시장경제 / 합리적 선택'
 };
 
 export default function LearningModulePage() {
@@ -564,43 +635,70 @@ export default function LearningModulePage() {
         </div>
       </div>
 
-      {/* Curriculum Info */}
+      {/* Curriculum Info - 6 subjects */}
       <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 mb-8 border border-blue-100">
         <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
           <BookOpen className="w-5 h-5 text-blue-600" />
-          2022 개정 교육과정 연계
+          2022 개정 교육과정 연계 (6개 교과)
         </h2>
-        <div className="grid md:grid-cols-3 gap-4 mb-4">
-          <div>
-            <p className="text-sm text-gray-600 mb-1">관련 과목</p>
-            <p className="font-medium text-gray-900">{curriculumInfo.subject}</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-600 mb-1">관련 단원</p>
-            <p className="font-medium text-gray-900">{curriculumInfo.unit}</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-600 mb-1">핵심 역량</p>
-            <div className="flex flex-wrap gap-1">
-              {curriculumInfo.competencies.map((comp, idx) => (
-                <span key={idx} className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full">
-                  {comp}
-                </span>
-              ))}
+
+        {/* Subject Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+          {curriculumInfo.subjects.map((subject) => (
+            <div
+              key={subject.code}
+              className={`p-3 rounded-lg border-2 ${subject.bgColor} hover:shadow-md transition-shadow`}
+              style={{ borderColor: subject.color }}
+            >
+              <p className="font-semibold text-sm" style={{ color: subject.color }}>
+                {subject.name}
+              </p>
+              <p className="text-xs text-gray-500">{subject.grade}</p>
+              <p className="text-xs text-gray-600 mt-1">
+                {subject.standards.length}개 성취기준
+              </p>
             </div>
+          ))}
+        </div>
+
+        {/* Competencies */}
+        <div className="mb-4">
+          <p className="text-sm text-gray-600 mb-2">핵심 역량</p>
+          <div className="flex flex-wrap gap-2">
+            {curriculumInfo.competencies.map((comp, idx) => (
+              <span key={idx} className="px-3 py-1 bg-white text-gray-700 text-sm rounded-full border shadow-sm">
+                {comp}
+              </span>
+            ))}
           </div>
         </div>
-        <div>
-          <p className="text-sm text-gray-600 mb-2">성취기준</p>
-          <ul className="space-y-1">
-            {curriculumInfo.achievement.map((item, idx) => (
-              <li key={idx} className="text-sm text-gray-700 flex items-start gap-2">
-                <CheckCircle className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
-                {item}
-              </li>
+
+        {/* Achievement Standards by Subject - Collapsible */}
+        <details className="mt-4">
+          <summary className="text-sm font-medium text-gray-700 cursor-pointer hover:text-blue-600 flex items-center gap-2">
+            <Target className="w-4 h-4" />
+            전체 성취기준 보기 ({curriculumInfo.subjects.reduce((acc, s) => acc + s.standards.length, 0)}개)
+          </summary>
+          <div className="mt-3 space-y-4">
+            {curriculumInfo.subjects.map((subject) => (
+              <div key={subject.code} className="pl-4 border-l-2" style={{ borderColor: subject.color }}>
+                <p className="text-sm font-medium mb-2" style={{ color: subject.color }}>
+                  {subject.name} ({subject.grade})
+                </p>
+                <ul className="space-y-1">
+                  {subject.standards.map((standard) => (
+                    <li key={standard.code} className="text-sm text-gray-700 flex items-start gap-2">
+                      <span className="font-mono text-xs bg-white px-1.5 py-0.5 rounded border flex-shrink-0">
+                        {standard.code}
+                      </span>
+                      <span>{standard.description}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             ))}
-          </ul>
-        </div>
+          </div>
+        </details>
       </div>
 
       {/* Lessons */}
