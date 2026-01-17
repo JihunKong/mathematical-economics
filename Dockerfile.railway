@@ -47,14 +47,15 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Install dependencies for Prisma
-RUN apk add --no-cache openssl libc6-compat
+# Install dependencies for Prisma and Python for crawler
+RUN apk add --no-cache openssl libc6-compat python3 py3-pip py3-requests
 
 # Copy backend build and dependencies
 COPY --from=backend-builder /app/dist ./dist
 COPY --from=backend-builder /app/node_modules ./node_modules
 COPY --from=backend-builder /app/prisma ./prisma
 COPY --from=backend-builder /app/package.json ./
+COPY --from=backend-builder /app/scripts ./scripts
 
 # Copy frontend build to public folder
 COPY --from=frontend-builder /frontend/dist ./public
