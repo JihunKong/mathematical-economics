@@ -59,14 +59,37 @@ async function checkInitialization() {
 
 const startServer = async () => {
   let server: Server;
-  
+
   try {
-    // Test database connection
-    await prisma.$connect();
-    logger.info('Database connected successfully');
-    
-    // Check initialization status
-    await checkInitialization();
+    // Test database connection with retry
+    let dbConnected = false;
+    for (let i = 0; i < 5; i++) {
+      try {
+        await prisma.$connect();
+        dbConnected = true;
+        logger.info('Database connected successfully');
+        break;
+      } catch (dbError) {
+        logger.warn(`Database connection attempt ${i + 1}/5 failed:`, dbError);
+        if (i < 4) {
+          await new Promise(resolve => setTimeout(resolve, 3000));
+        }
+      }
+    }
+
+    if (!dbConnected) {
+      logger.error('Failed to connect to database after 5 attempts');
+      // In production, we might want to start anyway and retry later
+      if (process.env.NODE_ENV !== 'production') {
+        process.exit(1);
+      }
+      logger.warn('Starting server without database connection...');
+    }
+
+    // Check initialization status (skip if no DB)
+    if (dbConnected) {
+      await checkInitialization();
+    }
 
     const { httpServer } = createApp();
 

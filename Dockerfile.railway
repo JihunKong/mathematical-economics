@@ -73,4 +73,5 @@ ENV NODE_ENV=production
 ENV SERVE_STATIC=true
 
 # Sync database schema and start server
-CMD ["sh", "-c", "npx prisma db push --schema=./prisma/schema.prisma --accept-data-loss && node dist/server.js"]
+# Continue even if db push fails (will retry on connection)
+CMD ["sh", "-c", "npx prisma db push --schema=./prisma/schema.prisma --accept-data-loss || echo 'DB push failed, starting anyway...' && node dist/server.js"]

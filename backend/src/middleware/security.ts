@@ -34,8 +34,24 @@ const blockedIPs = new Set<string>();
 
 // Redis 클라이언트 생성 (사용 가능한 경우)
 let redis: Redis | null = null;
-if (process.env.REDIS_URL) {
-  redis = new Redis(process.env.REDIS_URL);
+if (process.env.REDIS_URL && process.env.REDIS_ENABLED !== 'false') {
+  try {
+    redis = new Redis(process.env.REDIS_URL, {
+      maxRetriesPerRequest: 3,
+      lazyConnect: true,
+      retryStrategy: (times) => {
+        if (times > 3) return null;
+        return Math.min(times * 100, 2000);
+      }
+    });
+    redis.on('error', (err) => {
+      logger.warn('Security Redis error (non-fatal):', err.message);
+      redis = null;
+    });
+  } catch (err) {
+    logger.warn('Failed to create security Redis client');
+    redis = null;
+  }
 }
 
 // Rate limiter 설정
