@@ -9,19 +9,12 @@ RUN apk add --no-cache openssl libc6-compat
 COPY package*.json ./
 
 # Install all dependencies (including dev dependencies for build)
-RUN npm ci
+RUN npm install --legacy-peer-deps
 
 # Copy source code
 COPY . .
 
-# Set Prisma binary targets for Alpine Linux
-ENV PRISMA_QUERY_ENGINE_BINARY=/app/node_modules/.prisma/client/libquery_engine-linux-musl.so.node
-ENV PRISMA_QUERY_ENGINE_LIBRARY=/app/node_modules/.prisma/client/libquery_engine-linux-musl.so.node
-ENV PRISMA_MIGRATION_ENGINE_BINARY=/app/node_modules/@prisma/engines/migration-engine-linux-musl
-ENV PRISMA_INTROSPECTION_ENGINE_BINARY=/app/node_modules/@prisma/engines/introspection-engine-linux-musl
-ENV PRISMA_FMT_BINARY=/app/node_modules/@prisma/engines/prisma-fmt-linux-musl
-
-# Generate Prisma client with correct binary target
+# Generate Prisma client (Alpine uses linux-musl-openssl-3.0.x target)
 RUN npx prisma generate
 
 # Build application

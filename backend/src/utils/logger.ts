@@ -26,21 +26,18 @@ const logFormat = winston.format.printf(({ timestamp, level, message, ...metadat
   return msg;
 });
 
-export const logger = winston.createLogger({
-  level: process.env.LOG_LEVEL || 'info',
-  format: winston.format.combine(
-    winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-    winston.format.errors({ stack: true }),
-    winston.format.splat(),
-    logFormat
-  ),
-  transports: [
-    new winston.transports.Console({
-      format: winston.format.combine(
-        winston.format.colorize(),
-        logFormat
-      )
-    }),
+const transports: winston.transport[] = [
+  new winston.transports.Console({
+    format: winston.format.combine(
+      winston.format.colorize(),
+      logFormat
+    )
+  })
+];
+
+// Only add file transports in non-production or when explicitly enabled
+if (process.env.NODE_ENV !== 'production' && process.env.ENABLE_FILE_LOGGING === 'true') {
+  transports.push(
     new winston.transports.File({
       filename: path.join(logDir, 'error.log'),
       level: 'error',
@@ -52,6 +49,17 @@ export const logger = winston.createLogger({
       maxsize: 5242880, // 5MB
       maxFiles: 5
     })
-  ],
+  );
+}
+
+export const logger = winston.createLogger({
+  level: process.env.LOG_LEVEL || 'info',
+  format: winston.format.combine(
+    winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+    winston.format.errors({ stack: true }),
+    winston.format.splat(),
+    logFormat
+  ),
+  transports,
   exitOnError: false
 });

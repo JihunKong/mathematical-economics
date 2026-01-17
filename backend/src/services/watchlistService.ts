@@ -140,6 +140,26 @@ export class WatchlistService {
         throw new Error('선택한 주식 중 일부를 사용할 수 없습니다 🚫 다른 종목을 선택해주세요.');
       }
 
+      // 가격이 오래된 종목 즉시 업데이트 (24시간 이상 stale)
+      const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const staleStocks = stocks.filter(s => !s.lastPriceUpdate || s.lastPriceUpdate < dayAgo);
+
+      if (staleStocks.length > 0) {
+        const { StockDataService } = await import('./stockDataService');
+        const stockDataService = new StockDataService();
+
+        logger.info(`Updating ${staleStocks.length} stale stocks before watchlist save`);
+
+        for (const stock of staleStocks) {
+          try {
+            await stockDataService.getStockPrice(stock.symbol);
+            logger.info(`Updated stale price for ${stock.symbol}`);
+          } catch (error) {
+            logger.warn(`Failed to update price for ${stock.symbol}:`, error);
+          }
+        }
+      }
+
       // Use transaction for atomic operations
       const result = await prisma.$transaction(async (tx) => {
         // Remove existing watchlist

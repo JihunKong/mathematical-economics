@@ -16,6 +16,7 @@ import DashboardPage from './pages/DashboardPage';
 import TeacherDashboard from './pages/TeacherDashboard';
 import TeacherClassDetail from './pages/TeacherClassDetail';
 import TeacherStudentDetail from './pages/TeacherStudentDetail';
+import TeacherLearningAnalytics from './pages/TeacherLearningAnalytics';
 import TradingPage from './pages/TradingPage';
 import PortfolioPage from './pages/PortfolioPage';
 import LeaderboardPage from './pages/LeaderboardPage';
@@ -24,6 +25,10 @@ import AdminPage from './pages/AdminPage';
 import StockManagement from './pages/StockManagement';
 import StockManagementEnhanced from './pages/StockManagementEnhanced';
 import WatchlistSetupPage from './pages/WatchlistSetupPage';
+import LearningModulePage from './pages/LearningModulePage';
+import ConceptsPage from './pages/ConceptsPage';
+import ReflectionPage from './pages/ReflectionPage';
+import StudentGuidePage from './pages/StudentGuidePage';
 
 // Protected Route Component
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -185,6 +190,46 @@ function App() {
             element={
               <ProtectedRoute>
                 <TeacherStudentDetail />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="teacher/analytics"
+            element={
+              <ProtectedRoute>
+                <TeacherLearningAnalytics />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="learning"
+            element={
+              <ProtectedRoute>
+                <LearningModulePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="concepts"
+            element={
+              <ProtectedRoute>
+                <ConceptsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="reflection"
+            element={
+              <ProtectedRoute>
+                <ReflectionPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="guide"
+            element={
+              <ProtectedRoute>
+                <StudentGuidePage />
               </ProtectedRoute>
             }
           />

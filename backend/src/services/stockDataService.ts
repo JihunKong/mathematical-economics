@@ -505,6 +505,7 @@ export class StockDataService {
           dayHigh: priceData.dayHigh,
           dayLow: priceData.dayLow,
           volume: BigInt(priceData.volume),
+          lastPriceUpdate: new Date(),
         },
       });
     } catch (error: any) {

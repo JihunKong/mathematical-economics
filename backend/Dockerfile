@@ -1,90 +1,44 @@
-# Build stage
-FROM node:18-alpine AS builder
+FROM node:20-alpine
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
-COPY prisma ./prisma/
+# Install OpenSSL and other dependencies needed for Prisma
+RUN apk add --no-cache openssl libc6-compat
 
-# Install dependencies
-RUN npm ci
+# Copy backend package files (from project root context)
+COPY backend/package*.json ./
 
-# Copy source code
-COPY src ./src
-COPY tsconfig.json ./
+# Install all dependencies (including dev dependencies for build)
+RUN npm install --legacy-peer-deps
 
-# Generate Prisma Client
-RUN npx prisma generate
+# Copy backend source code
+COPY backend/ .
 
-# Build TypeScript
+# Debug: verify files
+RUN ls -la && ls -la prisma/ || echo "prisma folder not found"
+
+# Generate Prisma client
+RUN npx prisma generate --schema=./prisma/schema.prisma
+
+# Build application
 RUN npm run build
 
-# Production stage
-FROM node:18-alpine
+# Remove dev dependencies
+RUN npm prune --omit=dev
 
-# Install dependencies for Python, Puppeteer, OpenSSL and build tools
-RUN apk add --no-cache \
-    openssl \
-    chromium \
-    nss \
-    freetype \
-    freetype-dev \
-    harfbuzz \
-    ca-certificates \
-    ttf-freefont \
-    python3 \
-    py3-pip \
-    make \
-    g++ \
-    gcc \
-    libc-dev
-
-# Install Python packages for crawler scripts
-RUN pip3 install requests beautifulsoup4 lxml aiohttp --break-system-packages
-
-# Tell Puppeteer to use installed chromium
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
-    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
-
-WORKDIR /app
-
-# Copy package files
-COPY package*.json ./
-COPY prisma ./prisma/
-
-# Install production dependencies only
-RUN npm ci --only=production
-
-# Copy built application
-COPY --from=builder /app/dist ./dist
-
-# Copy scripts directory
-COPY scripts ./scripts
-
-# Install TypeScript for compiling initialization script
-RUN npm install --save-dev typescript @types/node
-
-# Make Python scripts executable
-RUN chmod +x scripts/*.py
-
-# Compile TypeScript initialization script
-RUN npx tsc scripts/initialize.ts --outDir scripts --esModuleInterop --skipLibCheck --resolveJsonModule
-
-# Create non-root user
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S nodejs -u 1001
-
-# Generate Prisma Client and fix permissions
+# Regenerate Prisma client for production
 RUN npx prisma generate
 
-# Change ownership of the app directory
-RUN chown -R nodejs:nodejs /app
+# Create logs directory and non-root user
+RUN mkdir -p /app/logs && \
+    addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001 && \
+    chown -R nodejs:nodejs /app
 
 USER nodejs
 
-# Expose port
-EXPOSE 5001
+EXPOSE 5000
 
-# Start the application with migrations and initialization
-CMD ["sh", "-c", "npx prisma db push --accept-data-loss && node scripts/initialize.js && node dist/server.js"]
+# Sync database schema and start server
+# Using db push instead of migrate deploy to handle schema drift
+CMD ["sh", "-c", "npx prisma db push --schema=./prisma/schema.prisma --accept-data-loss && node dist/server.js"]

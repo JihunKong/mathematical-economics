@@ -72,6 +72,7 @@ class ApiService {
         if (errorData?.code === 'PRICE_NOT_FRESH') {
           // For price not fresh errors, show the full detailed message
           toast.error(message, {
+            id: 'price-not-fresh',
             duration: 8000, // Show for 8 seconds
             style: {
               maxWidth: '500px',
@@ -79,8 +80,9 @@ class ApiService {
             }
           });
         } else if (errorData?.code === 'WATCHLIST_REQUIRED') {
-          // For watchlist required errors
+          // For watchlist required errors - use id to prevent duplicate toasts
           toast.error(message, {
+            id: 'watchlist-required',
             duration: 6000,
             style: {
               maxWidth: '400px',
@@ -91,6 +93,7 @@ class ApiService {
           // For stock not allowed errors, show detailed message
           console.log('API Interceptor: Showing STOCK_NOT_ALLOWED toast');
           toast.error(message, {
+            id: 'stock-not-allowed',
             duration: 8000,
             style: {
               maxWidth: '500px',
