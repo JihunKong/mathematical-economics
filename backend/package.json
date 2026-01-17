@@ -16,7 +16,8 @@
     "prisma:seed": "ts-node prisma/seed.ts",
     "import:stocks": "ts-node scripts/importStocks.ts",
     "import:curated": "ts-node scripts/importCuratedStocks.ts",
-    "create:teachers": "ts-node scripts/createTeacherAccount.ts"
+    "create:teachers": "ts-node scripts/createTeacherAccount.ts",
+    "fix:foreign-prices": "ts-node src/scripts/fixForeignStockPrices.ts"
   },
   "prisma": {
     "schema": "prisma/schema.prisma",

@@ -6,6 +6,7 @@ import { MockStockService } from './mockStockService';
 import { NaverChartService } from './naverChartService';
 import { KRXApiService } from './krxApiService';
 import { prisma } from '../config/database';
+import { getCurrencyFromMarket, ensurePriceInKRW } from '../config/exchangeRates';
 
 interface StockPriceData {
   symbol: string;
@@ -98,16 +99,38 @@ export class StockDataService {
       const yahooData = await this.yahooService.getStockPrice(yahooSymbol);
       if (yahooData) {
         const stock = yahooData;
+
+        // 해외 주식인 경우 KRW로 변환
+        const stockInfo = await prisma.stock.findUnique({
+          where: { symbol: symbol.toUpperCase() },
+          select: { market: true, currency: true },
+        });
+
+        const currency = stockInfo?.currency || (stockInfo ? getCurrencyFromMarket(stockInfo.market) : 'KRW');
+        const isForex = currency !== 'KRW';
+
+        // 가격 변환 (해외 주식의 경우 USD -> KRW)
+        const convertedCurrentPrice = isForex ? ensurePriceInKRW(stock.currentPrice, currency) : stock.currentPrice;
+        const convertedPreviousClose = isForex ? ensurePriceInKRW(stock.previousClose, currency) : stock.previousClose;
+        const convertedChange = isForex ? ensurePriceInKRW(stock.change, currency) : stock.change;
+        const convertedDayOpen = isForex ? ensurePriceInKRW(stock.dayOpen, currency) : stock.dayOpen;
+        const convertedDayHigh = isForex ? ensurePriceInKRW(stock.dayHigh, currency) : stock.dayHigh;
+        const convertedDayLow = isForex ? ensurePriceInKRW(stock.dayLow, currency) : stock.dayLow;
+
+        if (isForex) {
+          logger.info(`Converted ${symbol} prices from ${currency} to KRW (rate applied)`);
+        }
+
         const priceData: StockPriceData = {
           symbol,
           name: stock.name,
-          currentPrice: stock.currentPrice,
-          previousClose: stock.previousClose,
-          change: stock.change,
-          changePercent: stock.changePercent,
-          dayOpen: stock.dayOpen,
-          dayHigh: stock.dayHigh,
-          dayLow: stock.dayLow,
+          currentPrice: convertedCurrentPrice,
+          previousClose: convertedPreviousClose,
+          change: convertedChange,
+          changePercent: stock.changePercent, // 퍼센트는 변환 불필요
+          dayOpen: convertedDayOpen,
+          dayHigh: convertedDayHigh,
+          dayLow: convertedDayLow,
           volume: stock.volume,
           marketCap: stock.marketCap,
           timestamp: new Date(),

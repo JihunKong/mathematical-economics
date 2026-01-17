@@ -116,9 +116,13 @@ export class AggregatedStockService {
         let data = await services[serviceName as keyof typeof services]();
 
         if (data && data.currentPrice > 0) {
-          // Convert prices to KRW if needed
-          data = this.convertPriceDataToKRW(data, currency);
-          logger.info(`Successfully fetched ${symbol} from ${serviceName} (currency: ${currency})`);
+          // DB에서 가져온 데이터는 이미 KRW로 저장되어 있으므로 변환 불필요
+          // 외부 API에서 가져온 데이터만 변환
+          const isFromDatabase = serviceName === 'database';
+          if (!isFromDatabase) {
+            data = this.convertPriceDataToKRW(data, currency);
+          }
+          logger.info(`Successfully fetched ${symbol} from ${serviceName} (currency: ${currency}, converted: ${!isFromDatabase})`);
           return { ...data, hasRealPrice: true };
         }
       } catch (error: any) {
