@@ -19,5 +19,6 @@ router.patch('/:symbol/tracking', stockManagementController.toggleStockTracking)
 router.post('/collect-prices', stockManagementController.triggerPriceCollection);
 router.put('/:symbol/price', stockManagementController.updateStockPrice);
 router.post('/crawl-prices', stockManagementController.crawlStockPrices);
+router.post('/fix-foreign-prices', stockManagementController.fixForeignStockPrices);
 
 export default router;

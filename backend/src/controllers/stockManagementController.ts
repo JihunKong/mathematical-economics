@@ -384,3 +384,83 @@ export const crawlStockPrices = catchAsync(async (req: AuthenticatedRequest, res
     message: 'Stock crawling started in background'
   });
 });
+
+// Fix foreign stock prices - fetch fresh prices from Yahoo Finance
+export const fixForeignStockPrices = catchAsync(async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  // Check if user is teacher or admin
+  if (req.user.role !== 'TEACHER' && req.user.role !== 'ADMIN') {
+    return next(new AppError('🏫 선생님만 해외 주식 가격을 수정할 수 있습니다.', 403));
+  }
+
+  const { YahooFinanceService } = await import('../services/yahooFinanceService');
+  const { getCurrencyFromMarket, ensurePriceInKRW } = await import('../config/exchangeRates');
+
+  const yahooService = new YahooFinanceService();
+
+  // Get foreign stocks
+  const foreignStocks = await prisma.stock.findMany({
+    where: {
+      market: { in: ['NASDAQ', 'NYSE', 'OTC', 'DOW'] }
+    }
+  });
+
+  logger.info(`Starting fix for ${foreignStocks.length} foreign stocks`);
+
+  const results: { symbol: string; status: string; price?: number }[] = [];
+
+  for (const stock of foreignStocks) {
+    try {
+      const currency = stock.currency || getCurrencyFromMarket(stock.market);
+
+      // Fetch from Yahoo Finance
+      const yahooData = await yahooService.getStockPrice(stock.symbol);
+
+      if (!yahooData || yahooData.currentPrice <= 0) {
+        results.push({ symbol: stock.symbol, status: 'failed', price: 0 });
+        continue;
+      }
+
+      // Convert to KRW
+      const convertedPrice = ensurePriceInKRW(yahooData.currentPrice, currency);
+      const convertedPreviousClose = ensurePriceInKRW(yahooData.previousClose, currency);
+      const convertedChange = ensurePriceInKRW(yahooData.change, currency);
+      const convertedDayOpen = ensurePriceInKRW(yahooData.dayOpen, currency);
+      const convertedDayHigh = ensurePriceInKRW(yahooData.dayHigh, currency);
+      const convertedDayLow = ensurePriceInKRW(yahooData.dayLow, currency);
+
+      // Update database
+      await prisma.stock.update({
+        where: { id: stock.id },
+        data: {
+          currentPrice: convertedPrice,
+          previousClose: convertedPreviousClose,
+          change: convertedChange,
+          changePercent: yahooData.changePercent,
+          dayOpen: convertedDayOpen,
+          dayHigh: convertedDayHigh,
+          dayLow: convertedDayLow,
+          volume: BigInt(yahooData.volume || 0),
+          lastPriceUpdate: new Date(),
+        }
+      });
+
+      results.push({ symbol: stock.symbol, status: 'updated', price: convertedPrice });
+      logger.info(`Fixed ${stock.symbol}: ${convertedPrice.toLocaleString()} KRW`);
+
+      // Rate limiting
+      await new Promise(resolve => setTimeout(resolve, 300));
+    } catch (error: any) {
+      logger.error(`Failed to fix ${stock.symbol}: ${error.message}`);
+      results.push({ symbol: stock.symbol, status: 'error' });
+    }
+  }
+
+  const updated = results.filter(r => r.status === 'updated').length;
+  const failed = results.filter(r => r.status !== 'updated').length;
+
+  res.status(200).json({
+    success: true,
+    message: `Foreign stock prices fixed: ${updated} updated, ${failed} failed`,
+    data: results
+  });
+});
